@@ -1,0 +1,55 @@
+[Unit]
+Description=WireGuard Orchestrator - LinkGuard v2
+After=network-online.target hub-agent.service
+Wants=network-online.target
+Requires=hub-agent.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/linkguard-orchestrator
+ExecStart=/usr/bin/python3 /opt/linkguard-orchestrator/orchestrator.py
+
+# === Tokens (sobreescritos por install.sh con valores seguros) ===
+# NUNCA dejar estos valores por defecto en producción
+Environment=ADMIN_TOKEN=REPLACE_WITH_SECURE_TOKEN
+Environment=ORCH_TOKEN=REPLACE_WITH_SECURE_TOKEN
+Environment=HUB_AGENT_TOKEN=REPLACE_WITH_SECURE_TOKEN
+
+# HUB
+Environment=HUB_AGENT_URL=http://127.0.0.1:9000/RPC2
+Environment=HUB_ENDPOINT=127.0.0.1:51820 # REPLACE_WITH_YOUR_PUBLIC_IP:51820 
+Environment=HUB_PUBKEY_PATH=/etc/wireguard/wg-HUB.pub
+
+# WireGuard
+Environment=WG_IFACE=wg-HUB
+Environment=WG_BIN=/usr/bin/wg
+Environment=WG_ENABLE_NAT=1
+Environment=WG_NAT_OUT_IFACE=eth0
+Environment=WG_TUNNEL_CIDR=10.20.30.0/24
+
+# Estado y backups
+Environment=ORCH_STATE_PATH=/var/lib/wg-orchestrator/state.json
+Environment=BACKUP_ENABLED=1
+Environment=BACKUP_DIR=/var/lib/wg-orchestrator/backups
+Environment=BACKUP_MAX_KEEP=10
+Environment=BACKUP_INTERVAL_SEC=300
+Environment=EVENTS_LOG_PATH=/var/lib/wg-orchestrator/events.jsonl
+Environment=JWT_REVOKED_PATH=/var/lib/wg-orchestrator/jwt_revoked.json
+Environment=JWT_SECRET_PATH=/etc/linkguard/jwt_secret
+
+# Quotas
+Environment=DEFAULT_MAX_PEERS=50
+Environment=DEFAULT_MAX_NETWORKS=10
+
+# HA-04: Reintentos hub-agent
+Environment=HUB_RETRY_COUNT=3
+Environment=HUB_RETRY_DELAY=1.0
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

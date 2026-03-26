@@ -1,0 +1,46 @@
+[Unit]
+Description=WireGuard HUB Agent (auto-bootstrap) - LinkGuard v2
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/linkguard-orchestrator
+ExecStart=/usr/bin/python3 /opt/linkguard-orchestrator/hub-agent.py
+
+# OPS-01: Limpieza de reglas iptables al detener el servicio
+ExecStop=/opt/linkguard-orchestrator/hub-agent-cleanup.sh
+
+# WireGuard HUB
+Environment=HUB_WG_IFACE=wg-HUB
+Environment=WG_BIN=/usr/bin/wg
+Environment=WG_QUICK=/usr/bin/wg-quick
+Environment=WG_DIR=/etc/wireguard
+Environment=HUB_TUNNEL_IP=10.20.30.1/24
+Environment=HUB_LISTEN_PORT=51820
+
+# NAT
+Environment=HUB_ENABLE_NAT=1
+Environment=HUB_NAT_OUT_IFACE=eth0
+Environment=HUB_TUNNEL_CIDR=10.20.30.0/24
+
+# Auth (sobreescrito por install.sh)
+Environment=HUB_AGENT_TOKEN=REPLACE_WITH_SECURE_TOKEN
+
+# HA-03: bind a 127.0.0.1 por defecto (no expuesto a la red)
+Environment=HUB_AGENT_BIND=127.0.0.1
+Environment=HUB_AGENT_PORT=9000
+
+# HA-02: TLS (opcional, requiere certificados)
+Environment=HUB_AGENT_TLS=0
+# Environment=HUB_AGENT_CERT=/etc/linkguard/hub-agent.crt
+# Environment=HUB_AGENT_KEY=/etc/linkguard/hub-agent.key
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

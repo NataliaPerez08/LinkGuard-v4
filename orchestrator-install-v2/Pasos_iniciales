@@ -1,0 +1,87 @@
+## Pasos para iniciar el orquestrador y un peer
+
+---
+
+### En el servidor del orquestrador
+
+**1. Verificar configuración del servicio**
+```bash
+sudo cat /etc/systemd/system/orchestrator.service
+# Verificar que estos valores NO sean placeholders:
+# HUB_ENDPOINT=<IP_PUBLICA>:51820
+# ADMIN_TOKEN=<token_real>
+# ORCH_TOKEN=<token_real>
+# HUB_AGENT_TOKEN=<token_real>
+```
+
+**2. Iniciar el orquestrador**
+```bash
+sudo systemctl start orchestrator
+sudo systemctl status orchestrator
+sudo journalctl -u orchestrator -f
+```
+
+**3. Cargar el ADMIN_TOKEN en la sesión**
+```bash
+export ADMIN_TOKEN=$(sudo grep ADMIN_TOKEN /etc/systemd/system/orchestrator.service | cut -d= -f2-)
+```
+
+**4. Crear usuario para el peer**
+```bash
+orch-cli user-create peer-barcelona --admin-token $ADMIN_TOKEN
+# Guardar el token u_xxxx que devuelve
+```
+
+**5. Crear red (si no existe)**
+```bash
+orch-cli net-create mi-red 10.20.30.0/24 \
+    --topology hub-spoke \
+    --user-id peer-barcelona \
+    --admin-token $ADMIN_TOKEN
+```
+
+---
+
+### En la máquina del peer
+
+**6. Configurar peer.env**
+```bash
+sudo nano /etc/linkguard/peer.env
+```
+```ini
+ORCH_URL=http://<IP-del-orquestrador>:8000/RPC2
+ORCH_TOKEN=u_xxxx           # el user_token del paso 4
+PEER_ID=peer-barcelona
+USER_ID=peer-barcelona
+PEER_TAGS=                  # opcional
+```
+
+**7. Limpiar rutas residuales si no es la primera vez**
+```bash
+sudo ip route del 10.20.30.0/24 2>/dev/null || true
+sudo wg-quick down wg0 2>/dev/null || true
+```
+
+**8. Iniciar el peer**
+```bash
+sudo systemctl start wg-auto-register
+sudo journalctl -u wg-auto-register -f
+```
+
+**Log esperado si todo va bien:**
+```
+peer.register -> {'peer_id': '...', 'wg_ip': '10.20.30.x/32', ...}
+wg-quick up wg0  ← interfaz levantada
+peer.heartbeat -> {'desired_config_version': N}   ← loop cada 25s
+```
+
+---
+
+### Verificar desde el orquestrador
+
+```bash
+export JWT=$(orch-cli auth-login peer-barcelona u_xxxx | python3 -c "import sys,json; print(json.load(sys.stdin)['jwt'])")
+orch-cli peer-list
+orch-cli peer-get peer-barcelona
+orch-cli metrics --admin-token $ADMIN_TOKEN
+```

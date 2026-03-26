@@ -1,0 +1,32 @@
+[Unit]
+Description=WireGuard Peer Auto-Register & Heartbeat - LinkGuard v2
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+
+ExecStart=/usr/local/bin/wg-auto-register run
+
+# Leer configuración desde archivo seguro (permisos 600)
+EnvironmentFile=-/etc/linkguard/peer.env
+
+# Fallback de defaults (sobreescritos por peer.env)
+Environment=WG_INTERFACE=wg0
+Environment=WG_DIR=/etc/wireguard
+Environment=WG_CONF_PATH=/etc/wireguard/wg0.conf
+Environment=WG_PRIV_KEY_PATH=/etc/wireguard/wg0.key
+Environment=WG_PUB_KEY_PATH=/etc/wireguard/wg0.pub
+Environment=WG_KEEPALIVE=25
+Environment=WG_HEARTBEAT_INTERVAL=25
+Environment=WG_AUTO_STATE=/etc/wireguard/wg-auto.json
+
+Restart=always
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
