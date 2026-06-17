@@ -312,7 +312,7 @@ def main():
         return
 
     if args.cmd == "peer-unregister":
-        pretty(c.__getattr__("peer.unregister")(args.peer_id, args.token or None))
+        pretty(c.__getattr__("peer.unregister")(args.peer_id, args.token or None, args.admin_token))
         return
 
     if args.cmd == "assign-network":

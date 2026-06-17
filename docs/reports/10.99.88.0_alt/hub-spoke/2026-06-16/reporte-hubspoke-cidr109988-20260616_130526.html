@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reporte Hub-Spoke — CIDR 10.99.88.0/24 — LinkGuard v2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+         background: #0d1117; color: #c9d1d9; padding: 20px; }
+  h1 { color: #58a6ff; font-size: 1.8em; margin-bottom: 5px; }
+  h2 { color: #79c0ff; font-size: 1.4em; margin: 25px 0 15px; border-bottom: 1px solid #21262d; padding-bottom: 8px; }
+  h3 { color: #a5d6ff; font-size: 1.1em; margin: 15px 0 10px; }
+  h4 { color: #8b949e; font-size: 0.9em; margin: 10px 0 5px; }
+  pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 0.75em; overflow-x: auto; margin: 5px 0 15px; white-space: pre-wrap; }
+  code { background: #21262d; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 20px; font-size: 0.85em; }
+  th, td { border: 1px solid #30363d; padding: 6px 10px; text-align: center; }
+  th { background: #161b22; font-weight: 600; color: #79c0ff; }
+  td { background: #0d1117; }
+  .ok { color: #3fb950; font-weight: bold; }
+  .warn { color: #d29922; font-weight: bold; }
+  .fail { color: #f85149; font-weight: bold; }
+  .partial { color: #d29922; font-weight: bold; }
+  .tag-nube { background: #1f6feb33; color: #58a6ff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-qemu { background: #23863633; color: #3fb950; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-vm { background: #6e40c933; color: #d2a8ff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .nav { background: #161b22; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; }
+  .nav a { color: #58a6ff; text-decoration: none; margin-right: 15px; }
+  .nav a:hover { text-decoration: underline; }
+  .section { background: #161b22; border-radius: 8px; padding: 16px; margin-bottom: 20px; border: 1px solid #30363d; }
+  .summary-ok { color: #3fb950; }
+  .summary-fail { color: #f85149; }
+  .summary-partial { color: #d29922; }
+  .legend { color: #8b949e; margin-top: 10px; font-size: 0.8em; }
+</style>
+</head>
+<body>
+<h1>Reporte Hub-Spoke — CIDR 10.99.88.0/24 — LinkGuard v2</h1>
+<p>Generado: <code>2026-06-16 13:05:26 CST</code> | Orquestador: <code>101.44.24.91</code> | CIDR: <code>10.99.88.0/24</code></p>
+<p>Peers: 4 nube/vm + 3 QEMU (total 7)</p>
+
+<div class="section" id="inventario"><h2>Inventario de peers</h2><table><tr><th>Peer</th><th>IP tunel</th><th>Endpoint</th><th>NAT</th><th>Tipo</th></tr>
+<tr><td>57 nube (122.8.179.57)</td><td><code>10.99.88.3</code></td><td><code>122.8.179.57:51820</code></td><td>symmetric</td><td><span class="tag-nube">NUBE</span></td></tr>
+<tr><td>40 vm (172.20.0.40)</td><td><code>10.99.88.5</code></td><td><code>187.168.147.15:50256</code></td><td>symmetric</td><td><span class="tag-vm">VM</span></td></tr>
+<tr><td>141 nube (46.250.162.141)</td><td><code>10.99.88.4</code></td><td><code>46.250.162.141:51820</code></td><td>symmetric</td><td><span class="tag-nube">NUBE</span></td></tr>
+<tr><td>185 nube (46.250.168.185)</td><td><code>10.99.88.2</code></td><td><code>46.250.168.185:51820</code></td><td>symmetric</td><td><span class="tag-nube">NUBE</span></td></tr>
+<tr><td>qemu-orq</td><td><code>10.99.88.6</code></td><td><code>110.238.90.20:2704</code></td><td>symmetric</td><td><span class="tag-qemu">QEMU</span></td></tr>
+<tr><td>qemu-pa</td><td><code>10.99.88.7</code></td><td><code>110.238.90.20:2705</code></td><td>symmetric</td><td><span class="tag-qemu">QEMU</span></td></tr>
+<tr><td>qemu-pb</td><td><code>10.99.88.8</code></td><td><code>110.238.90.20:2703</code></td><td>symmetric</td><td><span class="tag-qemu">QEMU</span></td></tr>
+</table><p class="legend">Hub: <code>101.44.24.91:51820</code> — IP tunel: <code>10.99.88.1</code> | CIDR: <code>10.99.88.0/24</code></p></div>
+<div class="section" id="topo-hub-spoke">
+<h2>Topologia: <code>hub-spoke</code></h2>
+<p class="summary-partial">Ping OK: 41/42 — TTLs: TTL=63 (P2P)</p>
+<h3>Matriz de conectividad</h3><table><tr><th>Origen \ Destino</th>
+<th>57 nube (122.8.179.57)</th>
+<th>40 vm (172.20.0.40)</th>
+<th>141 nube (46.250.162.141)</th>
+<th>185 nube (46.250.168.185)</th>
+<th>qemu-orq</th>
+<th>qemu-pa</th>
+<th>qemu-pb</th>
+</tr>
+<tr><td><b>57 nube (122.8.179.57)</b></td>
+<td>—</td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>100.8 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>2.6 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>4.3 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>61.0 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>58.6 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>81.2 ms</small></td>
+</tr>
+<tr><td><b>40 vm (172.20.0.40)</b></td>
+<td class="ok"><span class="ok">OK</span><br><small>14.0 ms</small></td>
+<td>—</td>
+<td class="ok"><span class="ok">OK</span><br><small>10.9 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>17.3 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>87.5 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>57.3 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>98.6 ms</small></td>
+</tr>
+<tr><td><b>141 nube (46.250.162.141)</b></td>
+<td class="ok"><span class="ok">OK</span><br><small>2.6 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>123.7 ms</small></td>
+<td>—</td>
+<td class="ok"><span class="ok">OK</span><br><small>2.8 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>41.4 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>60.7 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>45.5 ms</small></td>
+</tr>
+<tr><td><b>185 nube (46.250.168.185)</b></td>
+<td class="ok"><span class="ok">OK</span><br><small>4.4 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>136.1 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>2.8 ms</small></td>
+<td>—</td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>58.0 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>58.7 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>63.1 ms</small></td>
+</tr>
+<tr><td><b>qemu-orq</b></td>
+<td class="ok"><span class="ok">OK</span><br><small>26.3 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>118.7 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>73.7 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>18.2 ms</small></td>
+<td>—</td>
+<td class="ok"><span class="ok">OK</span><br><small>33.7 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>48.5 ms</small></td>
+</tr>
+<tr><td><b>qemu-pa</b></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>73.2 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>155.4 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>36.0 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>15.2 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>74.0 ms</small></td>
+<td>—</td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>74.8 ms</small></td>
+</tr>
+<tr><td><b>qemu-pb</b></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>83.7 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>263.1 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>14.4 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>48.9 ms</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>89.7 ms</small></td>
+<td>—</td>
+</tr>
+</table>
+<h3>Detalle por par</h3><table><tr><th>Origen</th><th>Destino</th><th>Tipo</th><th>RTT (ms)</th><th>Perdida</th><th>TTL</th><th>Estado</th></tr>
+<tr><td>57 nube (122.8.179.57)</td><td>40 vm (172.20.0.40)</td><td>Relay via hub</td><td>100.8</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>57 nube (122.8.179.57)</td><td>141 nube (46.250.162.141)</td><td>P2P</td><td>2.6</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>57 nube (122.8.179.57)</td><td>185 nube (46.250.168.185)</td><td>P2P</td><td>4.3</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>57 nube (122.8.179.57)</td><td>qemu-orq</td><td>Relay via hub</td><td>61.0</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>57 nube (122.8.179.57)</td><td>qemu-pa</td><td>Relay via hub</td><td>58.6</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>57 nube (122.8.179.57)</td><td>qemu-pb</td><td>Relay via hub</td><td>81.2</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)</td><td>57 nube (122.8.179.57)</td><td>Relay via hub</td><td>14.0</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>40 vm (172.20.0.40)</td><td>141 nube (46.250.162.141)</td><td>Relay via hub</td><td>10.9</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>40 vm (172.20.0.40)</td><td>185 nube (46.250.168.185)</td><td>Relay via hub</td><td>17.3</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>40 vm (172.20.0.40)</td><td>qemu-orq</td><td>Relay via hub</td><td>87.5</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)</td><td>qemu-pa</td><td>Relay via hub</td><td>57.3</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)</td><td>qemu-pb</td><td>Relay via hub</td><td>98.6</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>141 nube (46.250.162.141)</td><td>57 nube (122.8.179.57)</td><td>P2P</td><td>2.6</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>141 nube (46.250.162.141)</td><td>40 vm (172.20.0.40)</td><td>Relay via hub</td><td>123.7</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>141 nube (46.250.162.141)</td><td>185 nube (46.250.168.185)</td><td>P2P</td><td>2.8</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>141 nube (46.250.162.141)</td><td>qemu-orq</td><td>Relay via hub</td><td>41.4</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>141 nube (46.250.162.141)</td><td>qemu-pa</td><td>Relay via hub</td><td>60.7</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>141 nube (46.250.162.141)</td><td>qemu-pb</td><td>Relay via hub</td><td>45.5</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>185 nube (46.250.168.185)</td><td>57 nube (122.8.179.57)</td><td>P2P</td><td>4.4</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>185 nube (46.250.168.185)</td><td>40 vm (172.20.0.40)</td><td>Relay via hub</td><td>136.1</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>185 nube (46.250.168.185)</td><td>141 nube (46.250.162.141)</td><td>P2P</td><td>2.8</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>185 nube (46.250.168.185)</td><td>qemu-orq</td><td>Relay via hub</td><td>58.0</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>185 nube (46.250.168.185)</td><td>qemu-pa</td><td>Relay via hub</td><td>58.7</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>185 nube (46.250.168.185)</td><td>qemu-pb</td><td>Relay via hub</td><td>63.1</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>qemu-orq</td><td>57 nube (122.8.179.57)</td><td>Relay via hub</td><td>26.3</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>qemu-orq</td><td>40 vm (172.20.0.40)</td><td>Relay via hub</td><td>118.7</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>qemu-orq</td><td>141 nube (46.250.162.141)</td><td>Relay via hub</td><td>73.7</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>qemu-orq</td><td>185 nube (46.250.168.185)</td><td>Relay via hub</td><td>18.2</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>qemu-orq</td><td>qemu-pa</td><td>Relay via hub</td><td>33.7</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>qemu-orq</td><td>qemu-pb</td><td>Relay via hub</td><td>48.5</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>qemu-pa</td><td>57 nube (122.8.179.57)</td><td>Relay via hub</td><td>73.2</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>qemu-pa</td><td>40 vm (172.20.0.40)</td><td>Relay via hub</td><td>155.4</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>qemu-pa</td><td>141 nube (46.250.162.141)</td><td>Relay via hub</td><td>36.0</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>qemu-pa</td><td>185 nube (46.250.168.185)</td><td>Relay via hub</td><td>15.2</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>qemu-pa</td><td>qemu-orq</td><td>Relay via hub</td><td>74.0</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>qemu-pa</td><td>qemu-pb</td><td>Relay via hub</td><td>74.8</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>qemu-pb</td><td>57 nube (122.8.179.57)</td><td>Relay via hub</td><td>83.7</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>qemu-pb</td><td>40 vm (172.20.0.40)</td><td>Relay via hub</td><td>263.1</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>qemu-pb</td><td>141 nube (46.250.162.141)</td><td>Relay via hub</td><td>14.4</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>qemu-pb</td><td>185 nube (46.250.168.185)</td><td>Relay via hub</td><td>48.9</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>qemu-pb</td><td>qemu-orq</td><td>Relay via hub</td><td>62.7</td><td>20%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>qemu-pb</td><td>qemu-pa</td><td>Relay via hub</td><td>89.7</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+</table>
+<h3>Throughput</h3><table><tr><th>Tipo</th><th>Cliente</th><th>Velocidad</th><th>Tamanio</th><th>Estado</th></tr>
+<tr><td><span class="tag-nube">NUBE</span></td><td>peer-122-8-179-57</td><td>6.91 Mbps</td><td>0 MB</td><td><span class="ok">OK</span></td></tr>
+<tr><td><span class="tag-nube">NUBE</span></td><td>peer-46-250-162-141</td><td>5.96 Mbps</td><td>0 MB</td><td><span class="ok">OK</span></td></tr>
+<tr><td><span class="tag-nube">QEMU</span></td><td>qemu-pa</td><td>—</td><td>—</td><td><span class="fail">FALLO</span></td></tr>
+</table>
+<h3>Configuracion WireGuard capturada</h3>
+<h4>Orquestador (wg-HUB)</h4>
+<pre>interface: wg-HUB
+  public key: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  private key: (hidden)
+  listening port: 51820
+
+peer: OrqurZyoQ/JmsaiGDw9o/k3WhdknHVIntNNssM0ctgQ=
+  endpoint: 110.238.90.20:2703
+  allowed ips: 10.99.88.8/32
+  latest handshake: 9 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: PAvNBYjXMJ07/aq1gpVSjDS/R7SizZMyU6dROCIyOwI=
+  endpoint: 110.238.90.20:2705
+  allowed ips: 10.99.88.7/32
+  latest handshake: 9 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: gpQtp8JTTWnWnemrmOogzYIxz4HnZYyfLW5jF0yduCU=
+  endpoint: 110.238.90.20:2704
+  allowed ips: 10.99.88.6/32
+  latest handshake: 10 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: 3UlTWn999vAOWcgQXMxUh6dnBx8OBiujjYeXzAmzT2s=
+  endpoint: 187.168.147.15:50256
+  allowed ips: 10.99.88.5/32
+  latest handshake: 13 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: /KvT6sAzj+bhTw0ZH0tlbxdsA10Jz3GQ7NUjwaqSoVI=
+  endpoint: 46.250.162.141:51820
+  allowed ips: 10.99.88.4/32
+  latest handshake: 14 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: HjGk2fHRtOTeJSzaDKNRebo/FOd6xm1/RdPtfqUy4F8=
+  endpoint: 122.8.179.57:51820
+  allowed ips: 10.99.88.3/32
+  latest handshake: 14 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: Sxm8b/biF9YefrHqEfe2Ev5rMeqN6cPrfqaT7i20ehk=
+  endpoint: 46.250.168.185:51820
+  allowed ips: 10.99.88.2/32
+  latest handshake: 15 seconds ago
+  transfer: 180 B received, 92 B sent
+</pre>
+<h4>Orquestador config (wg-HUB)</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = QJSunAcDAPan7XuY3fcY6XIYLNlsKCLTwSzX8HqMBVw=
+
+[Peer]
+PublicKey = Sxm8b/biF9YefrHqEfe2Ev5rMeqN6cPrfqaT7i20ehk=
+AllowedIPs = 10.99.88.2/32
+Endpoint = 46.250.168.185:51820
+
+[Peer]
+PublicKey = HjGk2fHRtOTeJSzaDKNRebo/FOd6xm1/RdPtfqUy4F8=
+AllowedIPs = 10.99.88.3/32
+Endpoint = 122.8.179.57:51820
+
+[Peer]
+PublicKey = /KvT6sAzj+bhTw0ZH0tlbxdsA10Jz3GQ7NUjwaqSoVI=
+AllowedIPs = 10.99.88.4/32
+Endpoint = 46.250.162.141:51820
+
+[Peer]
+PublicKey = 3UlTWn999vAOWcgQXMxUh6dnBx8OBiujjYeXzAmzT2s=
+AllowedIPs = 10.99.88.5/32
+Endpoint = 187.168.147.15:50256
+
+[Peer]
+PublicKey = gpQtp8JTTWnWnemrmOogzYIxz4HnZYyfLW5jF0yduCU=
+AllowedIPs = 10.99.88.6/32
+Endpoint = 110.238.90.20:2704
+
+[Peer]
+PublicKey = PAvNBYjXMJ07/aq1gpVSjDS/R7SizZMyU6dROCIyOwI=
+AllowedIPs = 10.99.88.7/32
+Endpoint = 110.238.90.20:2705
+
+[Peer]
+PublicKey = OrqurZyoQ/JmsaiGDw9o/k3WhdknHVIntNNssM0ctgQ=
+AllowedIPs = 10.99.88.8/32
+Endpoint = 110.238.90.20:2703
+</pre>
+<h4>185 nube (46.250.168.185) — wg show</h4>
+<pre>interface: wg0
+  public key: Sxm8b/biF9YefrHqEfe2Ev5rMeqN6cPrfqaT7i20ehk=
+  private key: (hidden)
+  listening port: 51820
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 17 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>185 nube (46.250.168.185) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = 2AEHTeE6vvhMOmjy5qqMpt2qswohlX5wvXi6oiku4n0=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+</pre>
+<h4>57 nube (122.8.179.57) — wg show</h4>
+<pre>interface: wg0
+  public key: HjGk2fHRtOTeJSzaDKNRebo/FOd6xm1/RdPtfqUy4F8=
+  private key: (hidden)
+  listening port: 51820
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 17 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>57 nube (122.8.179.57) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = wK9ytyn29QOKJcCqSgF/ELHZS9GSz6jXjt1PYbMVml0=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+</pre>
+<h4>141 nube (46.250.162.141) — wg show</h4>
+<pre>interface: wg0
+  public key: /KvT6sAzj+bhTw0ZH0tlbxdsA10Jz3GQ7NUjwaqSoVI=
+  private key: (hidden)
+  listening port: 51820
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 18 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>141 nube (46.250.162.141) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = 8Mra1fNx6K4wwzLCg7Ve6Io6VeTGQVkVOBEqCfg3KHY=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+</pre>
+<h4>40 vm (172.20.0.40) — wg show</h4>
+<pre>interface: wg0
+  public key: 3UlTWn999vAOWcgQXMxUh6dnBx8OBiujjYeXzAmzT2s=
+  private key: (hidden)
+  listening port: 50256
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 18 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>40 vm (172.20.0.40) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 50256
+PrivateKey = ICh++UJ8cGsrNET019dhG7rAgZ4T0UqXvstsJ6nLT0Y=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+</pre>
+<h4>qemu-orq — wg show</h4>
+<pre>interface: wg0
+  public key: gpQtp8JTTWnWnemrmOogzYIxz4HnZYyfLW5jF0yduCU=
+  private key: (hidden)
+  listening port: 51820
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 17 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>qemu-orq — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = aErQQiz15USM8t5flwgSvF5RwWJwvwui2FHv/DwtuWY=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+</pre>
+<h4>qemu-pa — wg show</h4>
+<pre>interface: wg0
+  public key: PAvNBYjXMJ07/aq1gpVSjDS/R7SizZMyU6dROCIyOwI=
+  private key: (hidden)
+  listening port: 51820
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 16 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>qemu-pa — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = mFRIlc5BneFn73uK2iBaNxlBhL2ytfcuMv4X/8TNL0k=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+</pre>
+<h4>qemu-pb — wg show</h4>
+<pre>interface: wg0
+  public key: OrqurZyoQ/JmsaiGDw9o/k3WhdknHVIntNNssM0ctgQ=
+  private key: (hidden)
+  listening port: 51820
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 16 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>qemu-pb — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = wI0MNJHQXZGBBLppckeQbr1raPo7GTIQ6BNs79PQD2k=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+</pre>
+</div>
+<div class="section" id="resumen"><h2>Resumen por topologia</h2><table><tr><th>Topologia</th><th>Ping OK</th><th>RTT minimo</th><th>RTT promedio</th><th>RTT maximo</th><th>Throughput</th></tr>
+<tr><td><code>hub-spoke</code></td><td><span class="summary-partial">41/42</span></td><td>2.6</td><td>59.5</td><td>263.1</td><td>nube: 6.4 Mbps</td></tr>
+</table></div>
+<div class="section" id="diagnostico"><h2>Diagnostico de fallas</h2>
+<p><b>Resultados de esta corrida:</b></p>
+<table><tr><th>Topologia</th><th>Ping OK</th><th>Estado</th></tr>
+<tr><td><code>hub-spoke</code></td><td>41/42</td><td class="summary-partial">⚠️</td></tr>
+</table>
+<p><b>Diagnostico por topologia:</b></p>
+<p><b>hub-spoke:</b> 41 rutas OK, 1 con perdida parcial (&lt;80%), 0 con perdida &ge;80%.</p>
+<p>Perdida parcial en 1 pares, origen mas afectado: <code>qemu-pb</code>. Causa probable: congestion del hub como relay bajo trafico concurrente de todos los peers, o buffers de kernel WireGuard saturados por multiplexacion de handshakes.</p>
+<p><b>Sugerencia:</b> Rutas explicitas via hub desde nubes hacia los destinos QEMU, o port forwarding UDP fijo en el host local hacia los puertos WireGuard de cada VM QEMU para eliminar la dependencia de NAT simetrico.</p>
+</div>
+</body></html>
