@@ -227,7 +227,7 @@ def cmd_local_mesh_status(args):
     # Obtener handshakes activos de 'wg show'
     handshakes: dict = {}
     try:
-        out = sp.check_output(["wg", "show", iface, "latest-handshakes"], text=True)
+        out = sp.check_output(["wg", "show", iface, "latest-handshakes"], universal_newlines=True)
         for line in out.strip().splitlines():
             parts = line.split()
             if len(parts) == 2:

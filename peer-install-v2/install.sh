@@ -44,6 +44,11 @@ log "Package manager: $PKG_MGR"
 install_deps() {
   log "Installing dependencies..."
 
+  if have python3 && have wg && have wg-quick; then
+    log "Core runtime dependencies already present, skipping package installation."
+    return 0
+  fi
+
   case "$PKG_MGR" in
     apt)
       export DEBIAN_FRONTEND=noninteractive
@@ -89,8 +94,8 @@ install_deps() {
     apk)
       apk update
       apk add --no-cache \
-        python3 py3-pip \
-        wireguard-tools curl ca-certificates
+        python3 \
+        wireguard-tools bash
       ;;
     *)
       die "Unsupported system. Install manually: python3 + wireguard-tools + curl."
@@ -105,6 +110,7 @@ REQ_FILES=(
   "wg-auto-register.py"
   "wg-auto-cli.py"
   "peer.env.example"
+  "peer_register/__init__.py"
 )
 
 for f in "${REQ_FILES[@]}"; do
@@ -141,6 +147,8 @@ install -d -m 0755 "$BIN_DIR"
 # --------------------------------------------------
 log "Installing peer agent..."
 install -m 0755 "$SCRIPT_DIR/wg-auto-register.py" "$APP_DIR/wg-auto-register.py"
+cp -r "$SCRIPT_DIR/peer_register" "$APP_DIR/"
+find "$APP_DIR/peer_register" -type f -exec chmod 0644 {} \;
 
 log "Installing CLI..."
 install -m 0755 "$SCRIPT_DIR/wg-auto-cli.py" "$BIN_DIR/wg-auto-cli"
@@ -179,27 +187,30 @@ if [[ -z "${ORCH_TOKEN:-}" ]] || [[ "${ORCH_TOKEN:-}" == "REPLACE_WITH_YOUR_TOKE
 fi
 
 # --------------------------------------------------
-# systemd sanity
+# Init system sanity
 # --------------------------------------------------
-if ! have systemctl; then
-  die "systemctl not found. This installer requires systemd."
+INIT_SYSTEM=""
+if have systemctl; then
+  INIT_SYSTEM="systemd"
+elif have rc-service && have rc-update; then
+  INIT_SYSTEM="openrc"
+else
+  die "No supported init system found. Expected systemd or OpenRC."
 fi
 
-log "Fixing systemd unit (removing conflicts)..."
+if [[ "$INIT_SYSTEM" == "systemd" ]]; then
+  log "Fixing systemd unit (removing conflicts)..."
 
-# Stop service to prevent restart loop
-systemctl stop  "$SERVICE" 2>/dev/null || true
-systemctl disable "$SERVICE" 2>/dev/null || true
+  # Stop service to prevent restart loop
+  systemctl stop  "$SERVICE" 2>/dev/null || true
+  systemctl disable "$SERVICE" 2>/dev/null || true
 
-# Remove vendor units and drop-in overrides
-rm -f  "/usr/lib/systemd/system/$SERVICE" 2>/dev/null || true
-rm -f  "/lib/systemd/system/$SERVICE"     2>/dev/null || true
-rm -rf "/etc/systemd/system/${SERVICE}.d" 2>/dev/null || true
+  # Remove vendor units and drop-in overrides
+  rm -f  "/usr/lib/systemd/system/$SERVICE" 2>/dev/null || true
+  rm -f  "/lib/systemd/system/$SERVICE"     2>/dev/null || true
+  rm -rf "/etc/systemd/system/${SERVICE}.d" 2>/dev/null || true
 
-# Write authoritative unit
-# FIX: ExecStart includes the required subcommand (`run`) so argparse doesn't crash.
-# Also: use wrapper so python path is consistent across distros.
-cat >"/etc/systemd/system/$SERVICE" <<UNIT
+  cat >"/etc/systemd/system/$SERVICE" <<UNIT
 [Unit]
 Description=WireGuard Peer Auto-Register & Heartbeat
 After=network-online.target
@@ -229,25 +240,53 @@ StandardError=journal
 WantedBy=multi-user.target
 UNIT
 
-# Reload and clean state
-systemctl daemon-reload
-systemctl reset-failed "$SERVICE" 2>/dev/null || true
+  systemctl daemon-reload
+  systemctl reset-failed "$SERVICE" 2>/dev/null || true
 
-log "Enabling service..."
-systemctl enable "$SERVICE"
+  log "Enabling service..."
+  systemctl enable "$SERVICE"
 
-# Only start if ORCH_TOKEN is configured
-if [[ -n "${ORCH_TOKEN:-}" ]] && [[ "${ORCH_TOKEN:-}" != "REPLACE_WITH_YOUR_TOKEN" ]]; then
-  log "Starting service..."
-  systemctl start "$SERVICE"
+  if [[ -n "${ORCH_TOKEN:-}" ]] && [[ "${ORCH_TOKEN:-}" != "REPLACE_WITH_YOUR_TOKEN" ]]; then
+    log "Starting service..."
+    systemctl start "$SERVICE"
 
-  log "Effective unit configuration:"
-  systemctl --no-pager show -p FragmentPath -p DropInPaths -p ExecStart "$SERVICE" || true
+    log "Effective unit configuration:"
+    systemctl --no-pager show -p FragmentPath -p DropInPaths -p ExecStart "$SERVICE" || true
 
-  log "Service status:"
-  systemctl --no-pager --full status "$SERVICE" || true
+    log "Service status:"
+    systemctl --no-pager --full status "$SERVICE" || true
 
-  log "Peer installed and service started."
+    log "Peer installed and service started."
+  else
+    log "Peer installed. Configure ORCH_TOKEN in $ENV_FILE and then run: systemctl start $SERVICE"
+  fi
 else
-  log "Peer installed. Configure ORCH_TOKEN in $ENV_FILE and then run: systemctl start $SERVICE"
+  log "Configuring OpenRC service..."
+  rc-service wg-auto-register stop 2>/dev/null || true
+
+  cat >"/etc/init.d/wg-auto-register" <<'UNIT'
+#!/sbin/openrc-run
+description="WireGuard Peer Auto-Register & Heartbeat"
+command="/usr/local/bin/wg-auto-register"
+command_args="run"
+command_background=true
+pidfile="/run/wg-auto-register.pid"
+name="wg-auto-register"
+
+depend() {
+  need net
+}
+UNIT
+  chmod 0755 /etc/init.d/wg-auto-register
+
+  rc-update add wg-auto-register default >/dev/null 2>&1 || true
+
+  if [[ -n "${ORCH_TOKEN:-}" ]] && [[ "${ORCH_TOKEN:-}" != "REPLACE_WITH_YOUR_TOKEN" ]]; then
+    log "Starting service..."
+    rc-service wg-auto-register restart || rc-service wg-auto-register start
+    rc-service wg-auto-register status || true
+    log "Peer installed and service started."
+  else
+    log "Peer installed. Configure ORCH_TOKEN in $ENV_FILE and then run: rc-service wg-auto-register start"
+  fi
 fi
