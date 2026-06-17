@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+*.raw
+*.cr2
+*.nef
+*.arw
+*.dng
+*.orf
+*.rw2
+*.pef
+*.srw
+*.raf
