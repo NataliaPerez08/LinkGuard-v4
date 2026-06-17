@@ -83,22 +83,22 @@ install_deps() {
       export DEBIAN_FRONTEND=noninteractive
       apt-get update -y
       apt-get install -y --no-install-recommends \
-        python3 python3-venv python3-pip \
+        python3 python3-venv python3-pip python3-defusedxml python3-jwt \
         wireguard-tools curl ca-certificates openssl
       install_iptables_if_missing
       ;;
     dnf)
       dnf -y makecache
-      dnf -y install python3 python3-pip wireguard-tools curl ca-certificates openssl
+      dnf -y install python3 python3-pip python3-defusedxml python3-pyjwt wireguard-tools curl ca-certificates openssl
       install_iptables_if_missing
       ;;
     yum)
       yum -y makecache || true
-      yum -y install python3 python3-pip wireguard-tools curl ca-certificates openssl
+      yum -y install python3 python3-pip python3-defusedxml python3-pyjwt wireguard-tools curl ca-certificates openssl
       install_iptables_if_missing
       ;;
     pacman)
-      deps=(python python-pip wireguard-tools curl ca-certificates openssl)
+      deps=(python python-pip python-defusedxml python-pyjwt wireguard-tools curl ca-certificates openssl)
 
       ipt="no"; iptnft="no"
       pacman -Q iptables     >/dev/null 2>&1 && ipt="yes"
@@ -128,16 +128,16 @@ install_deps() {
     zypper)
       zypper --non-interactive refresh
       zypper --non-interactive install -y \
-        python3 python3-pip wireguard-tools curl ca-certificates openssl
+        python3 python3-pip python3-defusedxml python3-PyJWT wireguard-tools curl ca-certificates openssl
       install_iptables_if_missing
       ;;
     apk)
       apk update
-      apk add --no-cache python3 py3-pip wireguard-tools curl ca-certificates openssl
+      apk add --no-cache python3 py3-pip py3-defusedxml py3-pyjwt wireguard-tools curl ca-certificates openssl
       install_iptables_if_missing
       ;;
     *)
-      die "Unsupported system. Install manually: python3 pip wireguard-tools iptables curl ca-certificates openssl"
+      die "Unsupported system. Install manually: python3 pip defusedxml pyjwt wireguard-tools iptables curl ca-certificates openssl"
       ;;
   esac
 }
@@ -149,6 +149,7 @@ fi
 
 req_files=(
   "orchestrator.py"
+  "orchestrator/__init__.py"
   "hub-agent.py"
   "hub-agent-cleanup.sh"
   "orch-cli.py"
@@ -205,6 +206,8 @@ source "$SECRETS_FILE"
 # ---- Install application files ----
 log "Installing application files..."
 install -m 0644 "$SCRIPT_DIR/orchestrator.py"    "$INSTALL_DIR/orchestrator.py"
+cp -r "$SCRIPT_DIR/orchestrator"                 "$INSTALL_DIR/orchestrator"
+find "$INSTALL_DIR/orchestrator" -type f -exec chmod 0644 {} \;
 install -m 0644 "$SCRIPT_DIR/hub-agent.py"        "$INSTALL_DIR/hub-agent.py"
 install -m 0755 "$SCRIPT_DIR/hub-agent-cleanup.sh" "$INSTALL_DIR/hub-agent-cleanup.sh"
 install -m 0755 "$SCRIPT_DIR/orch-cli.py"          /usr/local/bin/orch-cli

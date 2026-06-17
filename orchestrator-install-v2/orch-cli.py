@@ -87,8 +87,8 @@ def main():
     p_nd.add_argument("--purge", action="store_true")
 
     # F5: cambiar topología de una red existente (admin-only)
-    p_nst = sub.add_parser("net-set-topology",
-                            help="Cambia la topología de una red ('hub-spoke', 'mesh' o 'hub-mesh', parents=[shared])")
+    p_nst = sub.add_parser("net-set-topology", parents=[shared],
+                            help="Cambia la topología de una red ('hub-spoke', 'mesh' o 'hub-mesh')")
     p_nst.add_argument("network_id")
     p_nst.add_argument("topology", choices=["hub-spoke", "mesh", "hub-mesh"])  # HM-F5d
 
