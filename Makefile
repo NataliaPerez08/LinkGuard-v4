@@ -1,7 +1,38 @@
-.PHONY: test typecheck lint security syntax-check peer-test topology-test topology-test-all topology-test-ci topology-test-all-real testbed-up testbed-down testbed-up-real testbed-sync-real qemu-status-real performance-report performance-report-all-real uninstall uninstall-local
+.PHONY: test peer-test test-hub-agent test-xml-rpc test-integration test-e2e test-all typecheck lint security syntax-check peer-test topology-test topology-test-all topology-test-ci topology-test-all-real topology-test-aws-multiuser-cli topology-test-aws-multiuser-cli-1qemu topology-test-aws-multiuser-cli-1qemu-2tenants topology-test-aws-multiuser-cli-altcidr topology-test-aws-multiuser-cli-1qemu-altcidr testbed-up testbed-down testbed-up-real testbed-sync-real qemu-status-real performance-report performance-report-all-real uninstall uninstall-local
 
 test:
 	python3 -m pytest orchestrator-install-v2/tests/ -v --tb=short
+
+peer-test:
+	python3 -m pytest peer-install-v2/tests/ -v --tb=short
+
+test-hub-agent:
+	python3 -m pytest orchestrator-install-v2/tests/test_hub_agent.py -v --tb=short
+
+test-xml-rpc:
+	python3 -m pytest orchestrator-install-v2/tests/test_xml_rpc_wrappers.py -v --tb=short
+
+test-endpoints-ext:
+	python3 -m pytest orchestrator-install-v2/tests/test_endpoints.py -v --tb=short -k "TestPeerRegister or TestPeerHeartbeatExtended or TestPeerRequestNetwork or TestPeerRotateKey or TestPeerReportReachability or TestPeerUnregisterExtended or TestPeerAssignNetworkExtended or TestConfigGetMeshPeers or TestClassifyPeersForHubMeshExtended or TestConfigGetPeerConfig or TestConfigReload or TestMetricsJwt or TestRequirePeerJwt or TestMeshHash"
+
+test-hub-client-ext:
+	python3 -m pytest orchestrator-install-v2/tests/test_hub_client.py -v --tb=short -k "TestHubCallWithRetry or TestIsPublicEndpoint or TestGetWGEndpoint or TestHubApplyPeerAllowedIPs"
+
+test-auth-ext:
+	python3 -m pytest orchestrator-install-v2/tests/test_auth.py -v --tb=short -k "TestReadJwtSecret or TestEnforceTenantForPeer or TestFilterEventsForTenant"
+
+test-state-ext:
+	python3 -m pytest orchestrator-install-v2/tests/test_state.py -v --tb=short -k "TestBackup or TestAppendEventLog or TestBackupLoop"
+
+test-integration:
+	python3 -m pytest orchestrator-install-v2/tests/test_integration_xml_rpc_server.py -v --tb=short
+
+test-e2e:
+	python3 -m pytest testbed/tests/test_e2e_hub_agent_orchestrator.py testbed/tests/test_e2e_full_stack.py -v --tb=short
+
+test-all-new: test-hub-agent test-xml-rpc test-endpoints-ext test-hub-client-ext test-auth-ext test-state-ext peer-test
+
+test-all: test peer-test test-hub-agent test-xml-rpc test-endpoints-ext test-hub-client-ext test-auth-ext test-state-ext topology-test
 
 topology-test:
 	python3 -m pytest orchestrator-install-v2/tests/test_supported_topologies.py -v --tb=short
@@ -17,6 +48,31 @@ topology-test-ci:
 topology-test-all-real:
 	@test -n "$(TESTBED_REAL_ORCH_PASS)" || (echo "TESTBED_REAL_ORCH_PASS is required" >&2; exit 1)
 	bash -lc 'set -e; status=0; $(MAKE) topology-test || status=$$?; if [ $$status -eq 0 ]; then $(MAKE) testbed-up-real TESTBED_REAL_ORCH_HOST="$(if $(TESTBED_REAL_ORCH_HOST),$(TESTBED_REAL_ORCH_HOST),101.44.24.91)" TESTBED_REAL_ORCH_USER="$(if $(TESTBED_REAL_ORCH_USER),$(TESTBED_REAL_ORCH_USER),root)" TESTBED_REAL_ORCH_PASS="$(TESTBED_REAL_ORCH_PASS)" TESTBED_REAL_ORCH_URL="$(if $(TESTBED_REAL_ORCH_URL),$(TESTBED_REAL_ORCH_URL),http://$(if $(TESTBED_REAL_ORCH_HOST),$(TESTBED_REAL_ORCH_HOST),101.44.24.91):8000/RPC2)" || status=$$?; fi; if [ $$status -eq 0 ]; then TESTBED_REAL_ORCH_URL="$(if $(TESTBED_REAL_ORCH_URL),$(TESTBED_REAL_ORCH_URL),http://$(if $(TESTBED_REAL_ORCH_HOST),$(TESTBED_REAL_ORCH_HOST),101.44.24.91):8000/RPC2)" python3 -m pytest testbed/tests/test_real_orchestrator_integration.py -v --tb=short || status=$$?; fi; $(MAKE) testbed-down || true; exit $$status'
+
+topology-test-aws-multiuser-cli:
+	python3 tests-aws-multiuser-cli/generate-report-hubspoke.py --fast
+	python3 tests-aws-multiuser-cli/generate-report-hubmesh.py --fast
+	python3 tests-aws-multiuser-cli/generate-report-mesh.py --fast
+
+topology-test-aws-multiuser-cli-1qemu:
+	python3 tests-aws-multiuser-cli-1qemu/generate-report-hubspoke.py --fast
+	python3 tests-aws-multiuser-cli-1qemu/generate-report-hubmesh.py --fast
+	python3 tests-aws-multiuser-cli-1qemu/generate-report-mesh.py --fast
+
+topology-test-aws-multiuser-cli-1qemu-2tenants:
+	python3 tests-aws-multiuser-cli-1qemu/generate-report-hubspoke-2tenants.py --fast
+	python3 tests-aws-multiuser-cli-1qemu/generate-report-hubmesh-2tenants.py --fast
+	python3 tests-aws-multiuser-cli-1qemu/generate-report-mesh-2tenants.py --fast
+
+topology-test-aws-multiuser-cli-altcidr:
+	python3 tests-aws-multiuser-cli-altcidr/generate-report-hubspoke.py --fast --alt-cidr
+	python3 tests-aws-multiuser-cli-altcidr/generate-report-hubmesh.py --fast --alt-cidr
+	python3 tests-aws-multiuser-cli-altcidr/generate-report-mesh.py --fast --alt-cidr
+
+topology-test-aws-multiuser-cli-1qemu-altcidr:
+	python3 tests-aws-multiuser-cli-1qemu-altcidr/generate-report-hubspoke.py --fast --alt-cidr
+	python3 tests-aws-multiuser-cli-1qemu-altcidr/generate-report-hubmesh.py --fast --alt-cidr
+	python3 tests-aws-multiuser-cli-1qemu-altcidr/generate-report-mesh.py --fast --alt-cidr
 
 testbed-up:
 	python3 testbed/scripts/launch-testbed.py up

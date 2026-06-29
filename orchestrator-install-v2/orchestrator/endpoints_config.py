@@ -70,7 +70,7 @@ def rpc_config_get_peer_config(params: Dict[str, Any]) -> Dict[str, Any]:
         response["hub_mesh_relay_peers"] = classified["relay_only"]
         response["peer"]["allowed_ips"] = classified.get("relay_cidr") or network.get("cidr")
         response["meta"]["hub_mesh_peers_hash"] = hashlib.sha256(
-            json.dumps(classified, sort_keys=True).encode()
+            json.dumps(classified["direct"], sort_keys=True).encode()
         ).hexdigest()
 
     return response

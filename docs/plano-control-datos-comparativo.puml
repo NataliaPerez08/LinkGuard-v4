@@ -1,0 +1,79 @@
+@startuml plano-control-datos-comparativo
+title Comparativa: Planos de Control y Datos por Topología
+
+skinparam backgroundColor #FEFEFE
+skinparam defaultTextAlignment center
+
+' === HUB-SPOKE ===
+rectangle "Hub-Spoke" as HS {
+    rectangle "Control" as HS_C #E3F2FD {
+        node "Orch" as HS_Orch
+        node "A" as HS_A
+        node "B" as HS_B
+        HS_A -up-> HS_Orch
+        HS_B -up-> HS_Orch
+    }
+    rectangle "Data" as HS_D #E8F5E9 {
+        node "HUB" as HS_HUB
+        node "A" as HS_WA
+        node "B" as HS_WB
+        HS_WA -right-> HS_HUB
+        HS_WB -left-> HS_HUB
+    }
+}
+
+' === MESH ===
+rectangle "Mesh" as MS {
+    rectangle "Control" as MS_C #E3F2FD {
+        node "Orch" as MS_Orch
+        node "A" as MS_A
+        node "B" as MS_B
+        MS_A -up-> MS_Orch
+        MS_B -up-> MS_Orch
+    }
+    rectangle "Data" as MS_D #E8F5E9 {
+        node "A" as MS_WA
+        node "B" as MS_WB
+        MS_WA <-right-> MS_WB
+    }
+}
+
+' === HUB-MESH ===
+rectangle "Hub-Mesh" as HM {
+    rectangle "Control" as HM_C #E3F2FD {
+        node "Orch" as HM_Orch
+        node "A" as HM_A
+        node "B" as HM_B
+        node "C" as HM_C2
+        HM_A -up-> HM_Orch
+        HM_B -up-> HM_Orch
+        HM_C2 -up-> HM_Orch
+    }
+    rectangle "Data" as HM_D #E8F5E9 {
+        node "HUB" as HM_HUB
+        node "A" as HM_WA
+        node "B" as HM_WB
+        node "C" as HM_WC
+        HM_WA <-right-> HM_WB : directo
+        HM_WA -down-> HM_HUB : relay
+        HM_WB -down-> HM_HUB : relay
+        HM_WC -up-> HM_HUB : relay
+    }
+}
+
+note bottom of HS_D
+  **2 saltos**
+  Todo via HUB
+end note
+
+note bottom of MS_D
+  **1 salto**
+  Directo peer-peer
+end note
+
+note bottom of HM_D
+  **1-2 saltos**
+  Híbrido: directo o relay
+end note
+
+@enduml

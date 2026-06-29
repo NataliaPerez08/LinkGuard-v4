@@ -1,0 +1,32 @@
+@startuml sesion-jwt-peer
+title Sesión JWT del Peer
+
+participant "Peer\n(wg-auto-register)" as P
+participant "wg-auto.json\n(state)" as State
+participant "Orchestrator\n/auth.*" as Orch
+
+P -> State : load_state()
+State --> P : {jwt, jwt_expires_at}
+
+alt JWT existe y no expira en <60s
+    P --> P : usar JWT cacheado
+else JWT expira o no existe
+    alt JWT existe pero expira
+        P -> Orch : auth.refresh(jwt, TTL)
+        Orch --> P : {jwt, expires_at}
+    else JWT no existe
+        P -> Orch : auth.login(user_id, peer_id, ORCH_TOKEN, scopes, TTL)
+        Orch --> P : {jwt, expires_at}
+    end
+    P -> State : save {jwt, jwt_expires_at}
+end
+
+P --> P : retornar JWT para RPC
+
+note over P
+  **JWT_TTL**: 600s (default)
+  **Refresh**: 60s antes de expirar
+  **ORCH_TOKEN**: token del tenant (no del peer)
+end note
+
+@enduml

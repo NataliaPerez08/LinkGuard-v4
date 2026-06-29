@@ -1,0 +1,58 @@
+@startuml
+!theme plain
+skinparam backgroundColor #fafafa
+skinparam participant {
+  BorderColor #1565c0
+  BackgroundColor #e3f2fd
+}
+skinparam database {
+  BorderColor #1565c0
+  BackgroundColor #fff3e0
+}
+
+title Flujo Hub-Agent + Orquestador (E2E Mockeado)\n8 tests · importlib, topología "default", rpc→orch_server
+
+participant "test_e2e_hub_agent\n_orchestrator.py" as TEST
+participant "Hub-Agent\n(hub_agent.py)" as HA
+participant "Orquestador\n(XML-RPC)\nimportlib" as ORCH
+database "DB\n(sqlite)" as DB
+
+== Importación vía importlib ==
+TEST -> TEST : importlib.spec_from_file_location\n(hub_agent.py, path)
+TEST -> TEST : spec.loader.exec_module
+note right: Carga el hub_agent desde\nubicación real, evita\nconflicto de imports
+
+== Inicialización ==
+TEST -> HA : ejecuta hub_agent.py
+HA -> ORCH : ServerProxy(orch_url)
+HA -> ORCH : register_network("default", "hub-spoke", admin_token)
+ORCH -> DB : INSERT network + subnet
+DB --> ORCH : ok
+ORCH --> HA : {status: "ok", net_id: "n-xxx"}
+
+== Expertos en Topología ==
+TEST -> HA : set_topology("hub-mesh")
+HA -> ORCH : modify_network(net_id, topology=hub-mesh)
+ORCH -> DB : UPDATE network
+DB --> ORCH : ok
+ORCH --> HA : {status: "ok"}
+
+== Mesh Peers ==
+TEST -> HA : add_mesh_peers([peer02, peer03])
+HA -> ORCH : batch_register_peers(...)
+ORCH -> DB : INSERT peers + assign IPs
+DB --> ORCH : ok
+ORCH --> HA : {peers: ["peer02", "peer03"]}
+
+== Config Generation ==
+TEST -> HA : generate_config(hub_pubkey)
+HA -> ORCH : get_config(hub_pubkey, peer_id)
+ORCH -> DB : SELECT config
+ORCH --> HA : {interface, peers, topology}
+HA --> TEST : config dict valida
+
+== WireGuard Apply ==
+TEST -> TEST : verifica que apply_config()\nllama wg-quick up/ down
+note right: subprocess.run mockeado
+
+@enduml

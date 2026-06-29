@@ -59,9 +59,11 @@ def _build_mesh_blocks(d: dict) -> str:
         result += f"\n# Peer directo: {pid} (alive={mp_alive})\n"
         result += f"[Peer]\nPublicKey = {mp_pub}\n"
         result += f"AllowedIPs = {mp_ip}/32\n"
-        if mp_ep and mp_alive:
+        if mp_ep:
             result += f"Endpoint = {mp_ep}\n"
         result += f"PersistentKeepalive = {keepalive}\n"
+        if not mp_alive:
+            log(f"  {pid}: endpoint conocido pero peer no responde heartbeat aun (alive={mp_alive})")
     return result
 
 

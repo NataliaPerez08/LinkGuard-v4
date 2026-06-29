@@ -102,3 +102,78 @@ class TestBackup:
         reload(cfg)
         from orchestrator.state import _do_backup
         _do_backup()
+
+    def test_backup_enabled(self, monkeypatch, tmp_path):
+        backup_dir = tmp_path / "backups"
+        backup_dir.mkdir()
+        monkeypatch.setenv("BACKUP_ENABLED", "1")
+        monkeypatch.setenv("BACKUP_DIR", str(backup_dir))
+        monkeypatch.setenv("BACKUP_MAX_KEEP", "3")
+        from importlib import reload
+        import orchestrator.config as cfg
+        reload(cfg)
+        import orchestrator.state as st
+        st.STATE["test"] = "data"
+        original_path = st.config.STATE_PATH
+        st.config.STATE_PATH = str(tmp_path / "state.json")
+        try:
+            st.save_json(st.config.STATE_PATH, st.STATE)
+            st._do_backup()
+            backups = list(backup_dir.iterdir())
+            assert len(backups) >= 1
+        finally:
+            st.config.STATE_PATH = original_path
+
+    def test_backup_rotation(self, monkeypatch, tmp_path):
+        backup_dir = tmp_path / "backups"
+        backup_dir.mkdir()
+        monkeypatch.setenv("BACKUP_ENABLED", "1")
+        monkeypatch.setenv("BACKUP_DIR", str(backup_dir))
+        monkeypatch.setenv("BACKUP_MAX_KEEP", "2")
+        from importlib import reload
+        import orchestrator.config as cfg
+        reload(cfg)
+        import orchestrator.state as st
+        original_path = st.config.STATE_PATH
+        st.config.STATE_PATH = str(tmp_path / "state.json")
+        try:
+            st.save_json(st.config.STATE_PATH, {"v": 1})
+            st._do_backup()
+            st.save_json(st.config.STATE_PATH, {"v": 2})
+            st._do_backup()
+            st.save_json(st.config.STATE_PATH, {"v": 3})
+            st._do_backup()
+            backups = sorted(backup_dir.iterdir())
+            assert len(backups) <= 2
+        finally:
+            st.config.STATE_PATH = original_path
+
+
+class TestAppendEventLog:
+    def test_appends_to_log(self, monkeypatch, tmp_path):
+        log_path = tmp_path / "events.jsonl"
+        monkeypatch.setenv("EVENTS_LOG_PATH", str(log_path))
+        from importlib import reload
+        import orchestrator.config as cfg
+        reload(cfg)
+        from orchestrator.state import _append_event_to_log
+        _append_event_to_log({"kind": "test_kind", "detail": {"key": "val"}})
+        lines = log_path.read_text().strip().split("\n")
+        assert len(lines) == 1
+        import json
+        ev = json.loads(lines[0])
+        assert ev["kind"] == "test_kind"
+        assert ev["detail"]["key"] == "val"
+
+
+class TestBackupLoop:
+    def test_start_backup_loop(self, monkeypatch):
+        monkeypatch.setenv("BACKUP_ENABLED", "1")
+        from importlib import reload
+        import orchestrator.config as cfg
+        reload(cfg)
+        import orchestrator.state as st
+        st.start_backup_loop()
+        import threading
+        found = any(t.name == "backup-loop" for t in threading.enumerate())
+        assert found

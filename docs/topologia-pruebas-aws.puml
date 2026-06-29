@@ -1,0 +1,185 @@
+@startuml topologia-pruebas-aws
+title Topología de Pruebas LinkGuard — AWS + Multi-Tenant
+
+skinparam backgroundColor #FEFEFE
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+
+' ============================================================
+' TENANTS
+' ============================================================
+
+rectangle "admin" as admin_tenant #FFF9C4 {
+}
+
+rectangle "tenant-a" as tenant_a #E1BEE7 {
+}
+
+' ============================================================
+' ORCHESTRATOR (AWS)
+' ============================================================
+
+cloud "AWS us-east-1" as aws_cloud #E3F2FD {
+
+    node "Orchestrator + HUB\n34.193.139.170\necs-linkguard-orquestator" as Orch {
+        node "Orchestrator :8000\nXML-RPC /RPC2" as OrchRPC
+        node "Hub Agent :9000\nwg-HUB :51820" as HubAgent
+        database "state.json\nsecrets\njwt_secret" as OrchState
+    }
+
+    ' ============================================================
+    ' CLOUD PEERS (EC2)
+    ' ============================================================
+
+    node "EC2 — Ubuntu\n54.210.49.136\npeer-100-31-255-119\nwg0: 10.20.30.2" as PeerUbuntu
+
+    node "EC2 — Amazon Linux\n3.228.113.66\npeer-34-207-174-76\nwg0: 10.20.30.3" as PeerAmazon
+
+    node "EC2 — AlmaLinux\n98.87.229.24\npeer-184-72-71-143\nwg0: 10.20.30.4" as PeerAlma
+}
+
+' ============================================================
+' TERMINAL PEERS (behind jump host)
+' ============================================================
+
+rectangle "Red Privada\n172.20.0.0/24" as terminal_net #FFF3E0 {
+
+    node "Jump Host\n100.115.215.49\nroot / password" as Jump
+
+    node "VM40 — Alpine\n172.20.0.40\npeer-172-20-0-40\nwg0: 10.20.30.5\nopenrc" as PeerVM40
+
+    node "RPi5 — Raspberry Pi OS\n172.20.0.7\npeer-172-20-0-7\nwg0: 10.20.30.6\nsystemd" as PeerRPi5
+}
+
+' ============================================================
+' QEMU TESTBED (local)
+' ============================================================
+
+rectangle "Host QEMU (local)" as qemu_host #E8F5E9 {
+
+    rectangle "br0: 192.168.100.0/24\n(management)" as br0 #C8E6C9
+    rectangle "br1: 10.0.0.0/24\n(data)" as br1 #A5D6A7
+    rectangle "br2: 10.0.1.0/24\n(extra)" as br2 #81C784
+
+    node "orq — Alpine\n192.168.100.10\npeer01\nwg0: 10.20.30.7\nopenrc" as QEMUorq
+
+    node "pa — Alpine\n192.168.100.20\npeer02\nwg0: 10.20.30.8\nopenrc" as QEMUpa
+
+    node "pb — Alpine\n192.168.100.30\npeer03\nwg0: 10.20.30.9\nopenrc" as QEMUpb
+}
+
+' ============================================================
+' WIREGUARD OVERLAY
+' ============================================================
+
+rectangle "WireGuard Overlay\n10.20.30.0/24" as wg_overlay #BBDEFB {
+}
+
+' ============================================================
+' RELACIONES — Control Plane
+' ============================================================
+
+' Cloud peers -> Orchestrator
+PeerUbuntu -up-> OrchRPC : HTTP/XML-RPC\npeer.register\npeer.heartbeat
+PeerAmazon -up-> OrchRPC : HTTP/XML-RPC
+PeerAlma -up-> OrchRPC : HTTP/XML-RPC
+
+' Terminal peers -> Orchestrator (via jump)
+PeerVM40 -up-> Jump : SSH via jump
+PeerRPi5 -up-> Jump : SSH via jump
+Jump -up-> OrchRPC : HTTP/XML-RPC\n(via internet)
+
+' QEMU peers -> Orchestrator
+QEMUorq -up-> OrchRPC : HTTP/XML-RPC\n(via internet)
+QEMUpa -up-> OrchRPC : HTTP/XML-RPC
+QEMUpb -up-> OrchRPC : HTTP/XML-RPC
+
+' ============================================================
+' RELACIONES — Data Plane (WireGuard)
+' ============================================================
+
+' Cloud peers -> HUB
+PeerUbuntu --> HubAgent : wg-HUB\nWireGuard
+PeerAmazon --> HubAgent : wg-HUB\nWireGuard
+PeerAlma --> HubAgent : wg-HUB\nWireGuard
+
+' Terminal peers -> HUB (via NAT)
+PeerVM40 --> HubAgent : wg-HUB\n(via jump/NAT)
+PeerRPi5 --> HubAgent : wg-HUB\n(via jump/NAT)
+
+' QEMU peers -> HUB (via NAT)
+QEMUorq --> HubAgent : wg-HUB\n(via NAT)
+QEMUpa --> HubAgent : wg-HUB\n(via NAT)
+QEMUpb --> HubAgent : wg-HUB\n(via NAT)
+
+' ============================================================
+' RELACIONES — Tenant ownership
+' ============================================================
+
+admin_tenant ..> Orch : ADMIN_TOKEN\noperaciones globales
+tenant_a ..> PeerUbuntu : USER_ID=tenant-a
+tenant_a ..> PeerAmazon : USER_ID=tenant-a
+tenant_a ..> PeerAlma : USER_ID=tenant-a
+tenant_a ..> PeerVM40 : USER_ID=tenant-a
+tenant_a ..> PeerRPi5 : USER_ID=tenant-a
+tenant_a ..> QEMUorq : USER_ID=tenant-a
+tenant_a ..> QEMUpa : USER_ID=tenant-a
+tenant_a ..> QEMUpb : USER_ID=tenant-a
+
+' ============================================================
+' QEMU internal
+' ============================================================
+
+QEMUorq --> br0
+QEMUpa --> br0
+QEMUpb --> br0
+QEMUorq --> br1
+QEMUpa --> br1
+QEMUpb --> br1
+
+' ============================================================
+' NOTES
+' ============================================================
+
+note right of Orch
+  **Orchestrator**
+  - RPC: :8000/RPC2
+  - Hub WG: :51820
+  - Red: 10.20.30.0/24
+  - Topologías: hub-spoke, mesh, hub-mesh
+  - Tokens: /etc/linkguard/secrets
+end note
+
+note bottom of PeerAlma
+  **Cloud Peers (EC2)**
+  - IP pública directa
+  - SSH con clave linkguard-key.pem
+  - NAT: none (accesibles)
+  - Pueden hacer P2P directo
+end note
+
+note bottom of PeerRPi5
+  **Terminal Peers**
+  - Detrás de jump host
+  - SSH con password (sshpass)
+  - NAT: detrás de 100.115.215.49
+  - No accesibles directamente
+end note
+
+note bottom of QEMUpb
+  **QEMU VMs**
+  - Alpine Linux en QEMU
+  - 3 bridges: br0 (mgmt), br1 (data), br2
+  - SSH: root / linkguard-test
+  - NAT local, no accesibles externamente
+end note
+
+note top of wg_overlay
+  **WireGuard Overlay**
+  - Hub: 10.20.30.1
+  - 8 peers: 10.20.30.2 - 10.20.30.9
+  - MTU: 1420
+  - Keepalive: 25s
+end note
+
+@enduml

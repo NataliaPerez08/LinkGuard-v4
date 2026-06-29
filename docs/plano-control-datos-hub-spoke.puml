@@ -1,0 +1,41 @@
+@startuml plano-control-datos-hub-spoke
+title Hub-Spoke: Planos de Control y Datos
+
+skinparam backgroundColor #FEFEFE
+
+rectangle "Plano de Control" as PC #E3F2FD {
+    node "Orchestrator\n:8000" as Orch
+    node "Peer A" as PA
+    node "Peer B" as PB
+}
+
+rectangle "Plano de Datos" as PD #E8F5E9 {
+    node "HUB\nwg-HUB :51820" as HUB
+    node "Peer A\nwg0" as WGA
+    node "Peer B\nwg0" as WGB
+}
+
+' Control plane
+PA -up-> Orch : register/heartbeat\n(25s intervalo)
+PB -up-> Orch : register/heartbeat\n(25s intervalo)
+
+' Data plane
+WGA -right-> HUB : WireGuard cifrado
+WGB -left-> HUB : WireGuard cifrado
+
+note right of HUB
+  **Data Flow**
+  Peer A → HUB → Peer B
+  2 saltos, latencia alta
+  HUB es bottleneck
+end note
+
+note bottom of Orch
+  **Control Flow**
+  - Gestión de peers
+  - Asignación de IPs
+  - Distribución de configs
+  - No transporta datos
+end note
+
+@enduml

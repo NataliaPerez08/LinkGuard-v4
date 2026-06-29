@@ -62,4 +62,5 @@ class TestTryAutoApprove:
         result = try_auto_approve("new_pubkey", {"tag": "office"})
         assert result is not None
         assert "peer_id" in result
-        assert result["ip"] == "10.0.0.1"
+        # .1 reservada para el HUB de WireGuard (ver network_alloc._allocate_ip_in_network)
+        assert result["ip"] == "10.0.0.2"

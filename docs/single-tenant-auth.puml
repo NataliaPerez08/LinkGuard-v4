@@ -1,0 +1,65 @@
+@startuml single-tenant-auth
+title Flujo Single-Tenant: Autenticación y Operación
+
+actor "Admin" as Admin
+participant "orch-cli" as CLI
+participant "Orchestrator" as Orch
+participant "Tenant Único\n(tenant-a)" as TA
+participant "Peer 1\n(peer01)" as P1
+participant "Peer 2\n(peer02)" as P2
+
+== Provisioning del Tenant Único ==
+Admin -> CLI : orch-cli user-create tenant-a --admin-token $ADMIN
+CLI -> Orch : orch.user-create("tenant-a", admin_token)
+Orch -> Orch : _issue_user_token("tenant-a")\ngenera u_<hex16>
+Orch --> CLI : {user_id: "tenant-a", token: "u_abc..."}
+CLI --> Admin : token guardado en peer.env (ORCH_TOKEN)
+
+== Peer 1 obtiene JWT ==
+P1 -> Orch : auth.login("tenant-a", "peer01", ORCH_TOKEN, scopes)
+Orch -> Orch : _check_user_token\nvalida token del tenant
+Orch --> P1 : {jwt, expires_at: 600s}
+
+== Peer 1 se registra ==
+P1 -> Orch : peer.register("peer01", pub_key, endpoint, jwt)
+Orch -> Orch : _auth_from_token(jwt)\n→ user_id="tenant-a"
+Orch -> Orch : rpc_peer_register\nuser_id="tenant-a" guardado en peer
+Orch --> P1 : {peer_id, wg_ip=10.0.0.2, config_version}
+
+== Peer 2 obtiene JWT y se registra ==
+P2 -> Orch : auth.login("tenant-a", "peer02", ORCH_TOKEN, scopes)
+Orch --> P2 : {jwt, expires_at: 600s}
+P2 -> Orch : peer.register("peer02", pub_key, endpoint, jwt)
+Orch -> Orch : rpc_peer_register\nmismo user_id="tenant-a"
+Orch --> P2 : {peer_id, wg_ip=10.0.0.3, config_version}
+
+== Acceso entre Peers (mismo tenant) ==
+P1 -> Orch : peer.get("peer02", jwt_de_tenant_a)
+Orch -> Orch : _auth_from_token(jwt)\n→ user_id="tenant-a"
+Orch -> Orch : _enforce_tenant_for_peer("tenant-a", "peer02")
+Orch -> Orch : peer.user_id == "tenant-a" ✓ coincide
+Orch --> P1 : {peer_id: "peer02", wg_ip, endpoint, ...}
+
+== Admin lista peers del tenant ==
+Admin -> CLI : orch-cli peer-list --admin-token $ADMIN
+CLI -> Orch : peer.list(admin_token)
+Orch -> Orch : orch_check_admin_token\n(bypass multi-tenant, ve todo)
+Orch --> CLI : {peers: {peer01: {...}, peer02: {...}}}
+CLI --> Admin : lista completa (único tenant)
+
+== Refresh de JWT (60s antes de expirar) ==
+P1 -> Orch : auth.refresh(jwt, TTL)
+Orch -> Orch : _jwt_decode(jwt)\nvalida exp, iss, aud
+Orch --> P1 : {jwt_nuevo, expires_at: ...}
+
+note over Orch
+  **Sin aislamiento entre tenants** (sólo uno):
+  - Todos los peers comparten user_id="tenant-a"
+  - _enforce_tenant_for_peer siempre coincide → OK
+  - No hay riesgo de cross-tenant forbidden (403)
+  - JWT contiene user_id + scopes (igual que en multi-tenant)
+  - Admin sigue teniendo bypass con admin_token
+  - Refresh y revocación de JWT idénticos al modelo multi-tenant
+end note
+
+@enduml

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reporte Hub-Mesh CLI Multiusuario — LinkGuard v2 (AWS + VM + RPi5 + parrot)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+         background: #0d1117; color: #c9d1d9; padding: 20px; }
+  h1 { color: #58a6ff; font-size: 1.8em; margin-bottom: 5px; }
+  h2 { color: #79c0ff; font-size: 1.4em; margin: 25px 0 15px; border-bottom: 1px solid #21262d; padding-bottom: 8px; }
+  h3 { color: #a5d6ff; font-size: 1.1em; margin: 15px 0 10px; }
+  h4 { color: #8b949e; font-size: 0.9em; margin: 10px 0 5px; }
+  pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 0.75em; overflow-x: auto; margin: 5px 0 15px; white-space: pre-wrap; }
+  code { background: #21262d; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 20px; font-size: 0.85em; }
+  th, td { border: 1px solid #30363d; padding: 6px 10px; text-align: center; }
+  th { background: #161b22; font-weight: 600; color: #79c0ff; }
+  td { background: #0d1117; }
+  .ok { color: #3fb950; font-weight: bold; }
+  .warn { color: #d29922; font-weight: bold; }
+  .fail { color: #f85149; font-weight: bold; }
+  .partial { color: #d29922; font-weight: bold; }
+  .tag-nube { background: #1f6feb33; color: #58a6ff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-local { background: #f0883e33; color: #f0883e; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-vm { background: #6e40c933; color: #d2a8ff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-rpi { background: #da363333; color: #ff7b72; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .nav { background: #161b22; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; }
+  .nav a { color: #58a6ff; text-decoration: none; margin-right: 15px; }
+  .nav a:hover { text-decoration: underline; }
+  .section { background: #161b22; border-radius: 8px; padding: 16px; margin-bottom: 20px; border: 1px solid #30363d; }
+  .summary-ok { color: #3fb950; }
+  .summary-fail { color: #f85149; }
+  .summary-partial { color: #d29922; }
+  .legend { color: #8b949e; margin-top: 10px; font-size: 0.8em; }
+</style>
+</head>
+<body>
+<h1>Reporte Hub-Mesh CLI Multiusuario — LinkGuard v2 (AWS + VM + RPi5 + parrot)</h1>
+<p>Generado: <code>2026-06-21 08:33:01 CST</code> | Orquestador: <code>34.193.139.170</code> (usuario <code>admin</code>)</p>
+<p>Peers: 5 nube/vm/rpi5 + 1 local (total 6)</p>
+
+<div class="section" id="inventario"><h2>Inventario de peers</h2><table><tr><th>Peer</th><th>IP tunel</th><th>Endpoint</th><th>NAT</th><th>Tipo</th></tr>
+<tr><td>parrot (local)</td><td><code>10.20.30.6</code></td><td><code>189.217.196.119:51820</code></td><td>symmetric</td><td><span class="tag-local">LOCAL</span></td></tr>
+<tr><td>119 aws (54.210.49.136)</td><td><code>10.20.30.2</code></td><td><code>54.210.49.136:57895</code></td><td>symmetric</td><td><span class="tag-nube">NUBE</span></td></tr>
+<tr><td>40 vm (172.20.0.40)</td><td><code>10.20.30.5</code></td><td><code>187.168.147.15:48079</code></td><td>symmetric</td><td><span class="tag-vm">VM</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)</td><td><code>10.20.30.7</code></td><td><code>187.168.147.15:36196</code></td><td>symmetric</td><td><span class="tag-rpi">RPi5</span></td></tr>
+<tr><td>143 aws (98.87.229.24)</td><td><code>10.20.30.4</code></td><td><code>98.87.229.24:48052</code></td><td>symmetric</td><td><span class="tag-nube">NUBE</span></td></tr>
+<tr><td>76 aws (3.228.113.66)</td><td><code>10.20.30.3</code></td><td><code>3.228.113.66:43116</code></td><td>symmetric</td><td><span class="tag-nube">NUBE</span></td></tr>
+</table><p class="legend">Hub: <code>34.193.139.170:51820</code> — IP tunel: <code>10.20.30.1</code> | SSH nubes: llave <code>linkguard-key.pem</code> | VM/RPi5 via jump <code>root@100.115.215.49</code>
+<br><span class="warn">⚠</span> 40 vm (172.20.0.40): <b>Sin WiFi propio</b>, solo via jump host
+<br><span class="warn">⚠</span> 7 rpi5 (172.20.0.7): <b>Sin WiFi propio</b>, solo via jump host
+</p></div>
+<div class="section" id="topo-hub-mesh">
+<h2>Topologia: <code>hub-mesh</code></h2>
+<p class="summary-partial">Ping OK: 7/30 — TTLs: TTL=63 (relay 1 hop), TTL=126 (relay -62 hops)</p>
+<h3>Matriz de conectividad</h3><table><tr><th>Origen \ Destino</th>
+<th>parrot (local)<br><small><code>10.20.30.6</code></small></th>
+<th>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></th>
+<th>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></th>
+<th>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.7</code></small></th>
+<th>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></th>
+<th>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></th>
+</tr>
+<tr><td><b>parrot (local)</b><br><small><code>10.20.30.6</code></small></td>
+<td>—</td>
+<td class="fail"><span class="fail">✗ FALLO</span><br><small>—</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td class="fail"><span class="fail">✗ FALLO</span><br><small>—</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>171.5 ms</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+</tr>
+<tr><td><b>119 aws (54.210.49.136)</b><br><small><code>10.20.30.2</code></small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td>—</td>
+<td class="fail"><span class="fail">✗ FALLO</span><br><small>—</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>116.1 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>1.1 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>1.2 ms</small></td>
+</tr>
+<tr><td><b>40 vm (172.20.0.40)</b><br><small><code>10.20.30.5</code></small></td>
+<td class="fail"><span class="fail">✗ FALLO</span><br><small>—</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td>—</td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>193.4 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>85.5 ms</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+</tr>
+<tr><td><b>7 rpi5 (172.20.0.7)</b><br><small><code>10.20.30.7</code></small></td>
+<td class="fail"><span class="fail">✗ FALLO</span><br><small>—</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td class="fail"><span class="fail">✗ FALLO</span><br><small>—</small></td>
+<td>—</td>
+<td class="fail"><span class="fail">✗ FALLO</span><br><small>—</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+</tr>
+<tr><td><b>143 aws (98.87.229.24)</b><br><small><code>10.20.30.4</code></small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td>—</td>
+<td class="ok"><span class="ok">OK</span><br><small>1.1 ms</small></td>
+</tr>
+<tr><td><b>76 aws (3.228.113.66)</b><br><small><code>10.20.30.3</code></small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td>—</td>
+</tr>
+</table>
+<h3>Detalle por par</h3><table><tr><th>Origen</th><th>Destino</th><th>Tipo</th><th>RTT (ms)</th><th>Perdida</th><th>TTL</th><th>Estado</th></tr>
+<tr><td>parrot (local)<br><small><code>10.20.30.6</code></small></td><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>Relay via hub</td><td>136.8</td><td>80%</td><td>63</td><td><span class="fail">✗ FALLO</span></td></tr>
+<tr><td>parrot (local)<br><small><code>10.20.30.6</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>258.2</td><td>40%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>parrot (local)<br><small><code>10.20.30.6</code></small></td><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.7</code></small></td><td>Relay via hub</td><td>—</td><td>100%</td><td>—</td><td><span class="fail">✗ FALLO</span></td></tr>
+<tr><td>parrot (local)<br><small><code>10.20.30.6</code></small></td><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>Relay via hub</td><td>171.5</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>parrot (local)<br><small><code>10.20.30.6</code></small></td><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>Relay via hub</td><td>156.6</td><td>20%</td><td>126</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>parrot (local)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>158.3</td><td>40%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>—</td><td>100%</td><td>—</td><td><span class="fail">✗ FALLO</span></td></tr>
+<tr><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.7</code></small></td><td>Relay via hub</td><td>116.1</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>P2P</td><td>1.1</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>P2P</td><td>1.2</td><td>0%</td><td>126</td><td><span class="ok">OK</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>parrot (local)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>—</td><td>100%</td><td>—</td><td><span class="fail">✗ FALLO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>Relay via hub</td><td>92.2</td><td>40%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.7</code></small></td><td>Relay via hub</td><td>193.4</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>Relay via hub</td><td>85.5</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>Relay via hub</td><td>85.8</td><td>40%</td><td>126</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.7</code></small></td><td>parrot (local)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>—</td><td>100%</td><td>—</td><td><span class="fail">✗ FALLO</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.7</code></small></td><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>Relay via hub</td><td>93.6</td><td>60%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.7</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>—</td><td>100%</td><td>—</td><td><span class="fail">✗ FALLO</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.7</code></small></td><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>Relay via hub</td><td>—</td><td>100%</td><td>—</td><td><span class="fail">✗ FALLO</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.7</code></small></td><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>Relay via hub</td><td>93.1</td><td>60%</td><td>126</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>parrot (local)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>147.8</td><td>60%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>P2P</td><td>1.2</td><td>20%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>114.9</td><td>40%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.7</code></small></td><td>Relay via hub</td><td>91.3</td><td>60%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>P2P</td><td>1.1</td><td>0%</td><td>126</td><td><span class="ok">OK</span></td></tr>
+<tr><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>parrot (local)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>165.9</td><td>60%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>P2P</td><td>1.1</td><td>20%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>160.2</td><td>40%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.7</code></small></td><td>Relay via hub</td><td>89.7</td><td>20%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>P2P</td><td>1.7</td><td>40%</td><td>63</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+</table>
+<h3>Throughput</h3><table><tr><th>Tipo</th><th>Cliente</th><th>Velocidad</th><th>Tamanio</th><th>Estado</th></tr>
+<tr><td><span class="tag-nube">NUBE</span></td><td>peer-34-207-174-76</td><td>—</td><td>—</td><td><span class="fail">FALLO</span></td></tr>
+<tr><td><span class="tag-nube">NUBE</span></td><td>peer-184-72-71-143</td><td>2.10 Mbps</td><td>8 MB</td><td><span class="ok">OK</span></td></tr>
+</table>
+<h3>Configuracion WireGuard capturada</h3>
+<h4>Orquestador (wg-HUB)</h4>
+<pre>interface: wg-HUB
+  public key: nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+  private key: (hidden)
+  listening port: 51820
+
+peer: IKYiyEMpqau/fatNvpkD7fvZDgAM41GRfhvSXu+gnQc=
+  endpoint: 187.168.147.15:36196
+  allowed ips: 10.20.30.7/32
+  latest handshake: 14 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: 3RuYSYtGxHrTtAnBcHMZntTuV3lgMrTvtfikGIzIX2I=
+  endpoint: 189.217.196.119:51820
+  allowed ips: 10.20.30.6/32
+  latest handshake: 14 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: dTUEmtxExfy77CyQ1RZTQd/o8Hw517RewQdA2976cAY=
+  endpoint: 187.168.147.15:48079
+  allowed ips: 10.20.30.5/32
+  latest handshake: 20 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: 2y3fQDsvcP6/bsIGzq7LRyTEirT1ERDApfDRyT3Kljo=
+  endpoint: 98.87.229.24:48052
+  allowed ips: 10.20.30.4/32
+  latest handshake: 25 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: plvodvmnRUB2pdkRBb+BZ4rr4OcKr1j1grnkjYS45HE=
+  endpoint: 3.228.113.66:39647
+  allowed ips: 10.20.30.3/32
+  latest handshake: 27 seconds ago
+  transfer: 212 B received, 92 B sent
+
+peer: qWj/qS+ozKtO4lCXi+myn8PpthuwleV4ETg/nNL/ggo=
+  endpoint: 54.210.49.136:55531
+  allowed ips: 10.20.30.2/32
+  latest handshake: 31 seconds ago
+  transfer: 212 B received, 92 B sent
+</pre>
+<h4>Orquestador config (wg-HUB)</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = wOqLmH5kvsex7DRIlTJgcR9mCdeJjjRzs04V14hgum4=
+
+[Peer]
+PublicKey = qWj/qS+ozKtO4lCXi+myn8PpthuwleV4ETg/nNL/ggo=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 54.210.49.136:55531
+
+[Peer]
+PublicKey = plvodvmnRUB2pdkRBb+BZ4rr4OcKr1j1grnkjYS45HE=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 3.228.113.66:39647
+
+[Peer]
+PublicKey = 2y3fQDsvcP6/bsIGzq7LRyTEirT1ERDApfDRyT3Kljo=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 98.87.229.24:46123
+
+[Peer]
+PublicKey = dTUEmtxExfy77CyQ1RZTQd/o8Hw517RewQdA2976cAY=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 187.168.147.15:48079
+
+[Peer]
+PublicKey = 3RuYSYtGxHrTtAnBcHMZntTuV3lgMrTvtfikGIzIX2I=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 189.217.196.119:51820
+
+[Peer]
+PublicKey = IKYiyEMpqau/fatNvpkD7fvZDgAM41GRfhvSXu+gnQc=
+AllowedIPs = 10.20.30.7/32
+Endpoint = 187.168.147.15:36196
+</pre>
+<h4>119 aws (54.210.49.136) — wg show</h4>
+<pre>interface: wg0
+  public key: qWj/qS+ozKtO4lCXi+myn8PpthuwleV4ETg/nNL/ggo=
+  private key: (hidden)
+  listening port: 55531
+
+peer: nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 34 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>119 aws (54.210.49.136) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 55531
+PrivateKey = 6J01FjZq+5k7db9UhVHMaC1miFFOzfaoLr2nlMnfLGs=
+
+[Peer]
+PublicKey = nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+<h4>76 aws (3.228.113.66) — wg show</h4>
+<pre>interface: wg0
+  public key: plvodvmnRUB2pdkRBb+BZ4rr4OcKr1j1grnkjYS45HE=
+  private key: (hidden)
+  listening port: 38303
+
+peer: nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 34 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>76 aws (3.228.113.66) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 38303
+PrivateKey = iHOEUv0wAFDG6MLtDw2mGP3fyAWOSKztobYSRYKBT1k=
+
+[Peer]
+PublicKey = nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+<h4>143 aws (98.87.229.24) — wg show</h4>
+<pre>interface: wg0
+  public key: 2y3fQDsvcP6/bsIGzq7LRyTEirT1ERDApfDRyT3Kljo=
+  private key: (hidden)
+  listening port: 46123
+
+peer: nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 34 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>143 aws (98.87.229.24) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 46123
+PrivateKey = qOWADegmnK6JERT4aEaW7XMOH48OCOcuuaaLRxySg2w=
+
+[Peer]
+PublicKey = nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+<h4>40 vm (172.20.0.40) — wg show</h4>
+<pre>interface: wg0
+  public key: dTUEmtxExfy77CyQ1RZTQd/o8Hw517RewQdA2976cAY=
+  private key: (hidden)
+  listening port: 46953
+
+peer: nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 32 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>40 vm (172.20.0.40) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 46953
+PrivateKey = qB4sCMZakSbUGqS3erI5cIzRTA8HYsVL4iYYubxhFGI=
+
+[Peer]
+PublicKey = nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+<h4>7 rpi5 (172.20.0.7) — wg show</h4>
+<pre>interface: wg0
+  public key: IKYiyEMpqau/fatNvpkD7fvZDgAM41GRfhvSXu+gnQc=
+  private key: (hidden)
+  listening port: 51676
+
+peer: nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 29 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>7 rpi5 (172.20.0.7) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51676
+PrivateKey = +H0MdqwuZvmkLe364l92yIgWvsEHaRooiGMfjhiVtXw=
+
+[Peer]
+PublicKey = nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+<h4>parrot (local) — wg show</h4>
+<pre>interface: wg0
+  public key: 3RuYSYtGxHrTtAnBcHMZntTuV3lgMrTvtfikGIzIX2I=
+  private key: (hidden)
+  listening port: 51820
+
+peer: nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 30 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>parrot (local) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = eAt336qtms3oYuGzZbaRSGZeIDFZfLoIu1fQSj+u92U=
+
+[Peer]
+PublicKey = nyOFA8whxVorErqjGc7t9VoNlnSLPRiEy4iPWH7s4Gc=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+</div>
+<div class="section" id="resumen"><h2>Resumen por topologia</h2><table><tr><th>Topologia</th><th>Ping OK</th><th>RTT minimo</th><th>RTT promedio</th><th>RTT maximo</th><th>Throughput</th></tr>
+<tr><td><code>hub-mesh</code></td><td><span class="summary-partial">7/30</span></td><td>1.1</td><td>81.4</td><td>193.4</td><td>nube: 2.1 Mbps</td></tr>
+</table></div>
+<div class="section" id="auth-info"><h2>Modo de autenticacion</h2>
+<table><tr><th>Operacion</th><th>Usuario</th><th>Auth</th></tr>
+<tr><td>network.* (create/delete/topology)</td><td>admin</td><td><code>--admin-token</code></td></tr>
+<tr><td>peer.list (todos los peers)</td><td>admin</td><td><code>--admin-token</code></td></tr>
+<tr><td>peer.unregister</td><td>tenant-a</td><td><code>--token</code> (JWT)</td></tr>
+<tr><td>SSH nubes (54.210/3.228/98.87)</td><td>ubuntu / ec2-user</td><td>llave <code>linkguard-key.pem</code></td></tr>
+<tr><td>SSH orquestador (34.193.139.170)</td><td>admin</td><td>llave + <code>sudo</code></td></tr>
+<tr><td>SSH VM (172.20.0.40)</td><td>root</td><td>password via jump <code>root@100.115.215.49</code></td></tr>
+<tr><td>SSH RPi5 (172.20.0.7)</td><td>natalia</td><td>password via jump <code>root@100.115.215.49</code></td></tr>
+<tr><td>Ping / iperf3 / WG capture</td><td>—</td><td>SSH directo</td></tr>
+</table>
+<p class="legend">Usuario tenant: <code>tenant-a</code> | JWT via <code>auth-login</code> | Sudo pass: no definido (sudo -n)</p>
+</div>
+<div class="section" id="diagnostico"><h2>Diagnostico de fallas</h2>
+<p><b>Resultados de esta corrida:</b></p>
+<table><tr><th>Topologia</th><th>Ping OK</th><th>Estado</th></tr>
+<tr><td><code>hub-mesh</code></td><td>7/30</td><td class="summary-partial">⚠️</td></tr>
+</table>
+<p><b>Diagnostico por topologia:</b></p>
+<p><b>hub-mesh:</b> 7 rutas OK, 16 con perdida parcial (&lt;80%), 7 con perdida &ge;80%.</p>
+<p>Perdida parcial en 16 pares, origen mas afectado: <code>peer-34-207-174-76</code>. Causa probable: congestion del hub como relay bajo trafico concurrente de todos los peers, o buffers de kernel WireGuard saturados por multiplexacion de handshakes.</p>
+<p><b>VM/RPi5 (172.20.0.40, 172.20.0.7):</b> Estan detras del jump-host <code>root@100.115.215.49</code> y podrian no tener conectividad directa al orquestador (34.193.139.170). Verificar ruta de red y NAT en el jump-host.</p>
+<p><b>Fallos hacia/desde parrot:</b> El peer local puede tener problemas de conectividad con algunos peers. Verificar configuracion de firewall y rutas.</p>
+<h3>Acceso WAN de peers terminales</h3>
+<table><tr><th>Peer</th><th>Ruta default</th><th>WiFi</th><th>IP publica</th><th>Acceso directo</th></tr>
+<tr><td><b>40 vm (172.20.0.40)</b></td><td><code>default via 172.20.0.10 dev eth0 metric 1 onlink</code></td><td><code>no wlan0</code></td><td><code>inaccesible</code></td><td><span class="warn">⚠ NO</span></td></tr>
+<tr><td><b>7 rpi5 (172.20.0.7)</b></td><td><code>default via 192.168.1.254 dev wlan0 proto dhcp src 192.168.1.103 metric 600</code></td><td><code>wlan0            UP             192.168.1.103/24 2806:106e:18:7ad8:da3a:ddff:fef3:bb0/64 fe80::da3a:ddff:fef3:bb0/64</code></td><td><code>inaccesible</code></td><td><span class="warn">⚠ NO</span></td></tr>
+</table>
+<p><b>Sugerencia:</b> Verificar que todos los peers tienen conectividad bidireccional con el hub. Para VM/RPi5 detras de NAT/jump, asegurar que los puertos UDP esten abiertos y el jump-host reenvie trafico.</p>
+</div>
+</body></html>

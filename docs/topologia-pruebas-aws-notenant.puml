@@ -1,0 +1,157 @@
+@startuml topologia-pruebas-aws-notenant
+title Topología de Pruebas LinkGuard — AWS (sin tenants, admin-only)
+
+skinparam backgroundColor #FEFEFE
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam ArrowColor #34495E
+
+' ============================================================
+' ADMIN (único operador)
+' ============================================================
+
+rectangle "admin\n(operador global)" as admin_tenant #FFF9C4 {
+}
+
+' ============================================================
+' ORCHESTRATOR (AWS)
+' ============================================================
+
+cloud "AWS us-east-1" as aws_cloud #E3F2FD {
+
+    node "Orchestrator + HUB\n34.193.139.170\necs-linkguard-orquestator" as Orch {
+        node "Orchestrator :8000\nXML-RPC /RPC2" as OrchRPC
+        node "Hub Agent :9000\nwg-HUB :51820" as HubAgent
+        database "state.json\nsecrets\njwt_secret" as OrchState
+    }
+
+    node "EC2 — Ubuntu\n54.210.49.136\npeer-100-31-255-119\nwg0: 10.20.30.2" as PeerUbuntu
+
+    node "EC2 — Amazon Linux\n3.228.113.66\npeer-34-207-174-76\nwg0: 10.20.30.3" as PeerAmazon
+
+    node "EC2 — AlmaLinux\n98.87.229.24\npeer-184-72-71-143\nwg0: 10.20.30.4" as PeerAlma
+}
+
+' ============================================================
+' TERMINAL PEERS (behind jump host)
+' ============================================================
+
+rectangle "Red Privada\n172.20.0.0/24" as terminal_net #FFF3E0 {
+
+    node "Jump Host\n100.115.215.49\nroot / password" as Jump
+
+    node "VM40 — Alpine\n172.20.0.40\npeer-172-20-0-40\nwg0: 10.20.30.5\nopenrc" as PeerVM40
+
+    node "RPi5 — Raspberry Pi OS\n172.20.0.7\npeer-172-20-0-7\nwg0: 10.20.30.6\nsystemd" as PeerRPi5
+}
+
+' ============================================================
+' QEMU TESTBED (local)
+' ============================================================
+
+rectangle "Host QEMU (local)" as qemu_host #E8F5E9 {
+
+    rectangle "br0: 192.168.100.0/24\n(management)" as br0 #C8E6C9
+
+    node "orq — Alpine\n192.168.100.10\npeer01\nwg0: 10.20.30.7\nopenrc" as QEMUorq
+
+    node "pa — Alpine\n192.168.100.20\npeer02\nwg0: 10.20.30.8\nopenrc" as QEMUpa
+
+    node "pb — Alpine\n192.168.100.30\npeer03\nwg0: 10.20.30.9\nopenrc" as QEMUpb
+}
+
+' ============================================================
+' WIREGUARD OVERLAY
+' ============================================================
+
+rectangle "WireGuard Overlay\n10.20.30.0/24" as wg_overlay #BBDEFB {
+}
+
+' ============================================================
+' RELACIONES — Control Plane
+' ============================================================
+
+PeerUbuntu -up-> OrchRPC : HTTP/XML-RPC\nADMIN_TOKEN (sin USER_ID)
+PeerAmazon -up-> OrchRPC : HTTP/XML-RPC
+PeerAlma -up-> OrchRPC : HTTP/XML-RPC
+
+PeerVM40 -up-> Jump : SSH via jump
+PeerRPi5 -up-> Jump : SSH via jump
+Jump -up-> OrchRPC : HTTP/XML-RPC
+
+QEMUorq -up-> OrchRPC : HTTP/XML-RPC
+QEMUpa -up-> OrchRPC : HTTP/XML-RPC
+QEMUpb -up-> OrchRPC : HTTP/XML-RPC
+
+' ============================================================
+' RELACIONES — Data Plane (WireGuard)
+' ============================================================
+
+PeerUbuntu --> HubAgent : wg-HUB\nWireGuard
+PeerAmazon --> HubAgent : wg-HUB\nWireGuard
+PeerAlma --> HubAgent : wg-HUB\nWireGuard
+PeerVM40 --> HubAgent : wg-HUB\n(via jump/NAT)
+PeerRPi5 --> HubAgent : wg-HUB\n(via jump/NAT)
+QEMUorq --> HubAgent : wg-HUB\n(via NAT)
+QEMUpa --> HubAgent : wg-HUB\n(via NAT)
+QEMUpb --> HubAgent : wg-HUB\n(via NAT)
+
+' ============================================================
+' RELACIONES — Single-owner (admin)
+' ============================================================
+
+admin_tenant ..> Orch : ADMIN_TOKEN\aviso de peer (RPC)
+admin_tenant ..> PeerUbuntu : ADMIN_TOKEN
+admin_tenant ..> PeerAmazon : ADMIN_TOKEN
+admin_tenant ..> PeerAlma : ADMIN_TOKEN
+admin_tenant ..> PeerVM40 : ADMIN_TOKEN
+admin_tenant ..> PeerRPi5 : ADMIN_TOKEN
+admin_tenant ..> QEMUorq : ADMIN_TOKEN
+admin_tenant ..> QEMUpa : ADMIN_TOKEN
+admin_tenant ..> QEMUpb : ADMIN_TOKEN
+
+' ============================================================
+' QEMU internal
+' ============================================================
+
+QEMUorq --> br0
+QEMUpa --> br0
+QEMUpb --> br0
+
+' ============================================================
+' NOTES
+' ============================================================
+
+note right of Orch
+  **Orchestrator (modo admin-only)**
+  - Un solo operador global (admin)
+  - Sin _enforce_tenant_for_peer: bypass total
+  - AUTH_TOKEN=ADMIN_TOKEN en cada peer.env
+  - No requiere USER_ID
+  - Todas las operaciones admiten admin_token
+end note
+
+note bottom of PeerAlma
+  **Sin aislamiento de tenants**
+  - 8 peers sin user_id (o user_id=admin)
+  - Cualquier peer puede hacer peer.get
+    sobre cualquier otro peer
+  - Ideal para pruebas funcionales rápidas
+  - Misma red 10.20.30.0/24 sin barrera
+end note
+
+note top of wg_overlay
+  **WireGuard Overlay**
+  - Hub: 10.20.30.1
+  - 8 peers: 10.20.30.2 - 10.20.30.9
+  - Sin distinción lógica entre peers
+end note
+
+note bottom of QEMUpb
+  **Caso de uso**
+  - CI/CD con token de administración único
+  - Pruebas de topología puras (hub-spoke/mesh/hub-mesh)
+    sin validar autorización entre usuarios
+end note
+
+@enduml

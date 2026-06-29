@@ -1,0 +1,109 @@
+@startuml hostinfo-topology
+title Topología de Componentes — Testbed LinkGuard (2026-06-28 15:54)
+
+!define NUBE #D6E4FF
+!define ORQ  #D5F5E3
+!define QEMU #E8DAF7
+!define VM   #E6D8F5
+!define RPI  #FADBD8
+!define LOC  #FDEBD0
+
+skinparam backgroundColor #FFFFFF
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #2C3E50
+  FontColor #1B1B1B
+  FontSize 11
+}
+skinparam cloud {
+  BackgroundColor #F4F8FB
+  BorderColor #2C3E50
+  FontColor #1B4F72
+}
+skinparam package {
+  BackgroundColor #FCFCFC
+  BorderColor #2C3E50
+  FontColor #1B4F72
+}
+skinparam ArrowColor #34495E
+hide stereotype
+
+cloud "AWS Cloud\n(VPC 10.20.1.0/24)" as AWS {
+  node "Orquestador\n**orq** · 34.193.139.170\nDebian 12 · Neoverse-N1 4c\nwg-HUB 10.20.30.1/24" as ORCH ORQ
+  node "**119 aws**\n54.210.49.136\nUbuntu 22.04 · wg0 10.20.30.2" as AW119 NUBE
+  node "**76 aws**\n3.228.113.66\nAmazon Linux 2023 · wg0 10.20.30.3" as AW76 NUBE
+  node "**143 aws**\n98.87.229.24\nAlmaLinux 9.8 · wg0 10.20.30.4" as AW143 NUBE
+}
+
+cloud "Internet" as INET
+
+node "Jump host\nroot@100.115.215.49" as JUMP
+
+cloud "LAN 172.20.0.0/24\n(tras jump)" as LAN {
+  node "**40 vm**\n172.20.0.40\nAlpine 3.22 · wg0 10.20.30.5" as VM40 VM
+  node "**7 rpi5**\n172.20.0.7\nDebian 13 trixie · wg0 10.20.30.6" as RPI5 RPI
+}
+
+node "host-local (**parrot**)\nParrot 7.3 · i3-N305 8c · 7.4 GB\nbr0 192.168.100.1 | br1 10.0.0.1 | br2 10.0.1.1" as HOST LOC
+
+package "VMs QEMU en host-local\n(bridges br0/br1)" as QEMUPOOL {
+  node "**peer-qemu01**\norq · Alpine 3.21\neth0 192.168.100.10\neth1 10.0.0.10\nwg0 10.20.30.7" as Q01 QEMU
+  node "**peer-qemu02**\npa · Alpine 3.21\neth0 192.168.100.20\neth1 10.0.0.20" as Q02 QEMU
+  node "**peer-qemu03**\npb · Alpine 3.21\neth0 192.168.100.30\neth1 10.0.0.30" as Q03 QEMU
+}
+
+' Acceso SSH / conectividad física
+HOST --> JUMP : jump host (password)
+JUMP --> VM40 : root
+JUMP --> RPI5 : natalia
+HOST --> Q01 : sshpass (br0)
+HOST --> Q02 : sshpass (br0)
+HOST --> Q03 : sshpass (br0)
+JUMP ... INET
+HOST ... INET : tailscale0 / wlp1s0
+INET --> ORCH : SSH (admin + key)
+INET --> AW119 : SSH (ubuntu + key)
+INET --> AW76 : SSH (ec2-user + key)
+INET --> AW143 : SSH (ec2-user + key)
+
+' Overlay WireGuard (overlay 10.20.30.0/24)
+cloud "Overlay WireGuard 10.20.30.0/24" as WG
+ORCH .. WG
+AW119 .. WG
+AW76 .. WG
+AW143 .. WG
+VM40 .. WG
+RPI5 .. WG
+Q01 .. WG
+
+note right of ORCH
+  **wg-HUB** en el orquestador actúa como hub:
+  peers WG se registran contra orq
+  (svc WG del orq: inactive en hostinfo,
+   pero wg-HUB presente: 10.20.30.1/24)
+end note
+
+note bottom of QEMUPOOL
+  QEMU02/03 NO tienen iface wg0
+  (solo peer-qemu01 con wg0 10.20.30.7)
+end note
+
+skinparam note {
+  BackgroundColor #FCFCFC
+  BorderColor #2C3E50
+  FontColor #1B1B1B
+}
+
+note as LEGEND
+  **Leyenda** (10 máquinas)
+  NUBE → peer AWS (3) · ORQ → orquestador
+  QEMU → VM local (3) · VM → VM40 tras jump
+  RPI → RPi5 tras jump · LOCAL → host-local (parrot)
+
+  **Redes**
+  VPC AWS 10.20.1.0/24 · Overlay WG 10.20.30.0/24
+  br0 192.168.100.0/24 · br1 10.0.0.0/24 · br2 10.0.1.0/24
+  LAN 172.20.0.0/24
+end note
+
+@enduml

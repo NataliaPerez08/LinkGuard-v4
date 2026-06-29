@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LinkGuard Releasev4 — Reporte de Requerimientos</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; max-width: 960px; margin: 0 auto; padding: 1.5em; background: #fafafa; color: #222; line-height: 1.6; }
+  h1 { border-bottom: 3px solid #1565c0; padding-bottom: 0.3em; color: #0d47a1; font-size: 1.8em; }
+  h2 { color: #1565c0; border-bottom: 1px solid #e0e0e0; padding-bottom: 0.2em; margin-top: 1.8em; }
+  h3 { color: #37474f; margin-top: 1.4em; margin-bottom: 0.4em; }
+  h4 { color: #546e7a; margin-top: 1.2em; margin-bottom: 0.3em; font-size: 1em; }
+  p { margin: 0.5em 0; text-align: justify; }
+  ul, ol { margin: 0.4em 0 0.8em; padding-left: 1.8em; }
+  li { margin: 0.2em 0; }
+  code { background: #e3f2fd; padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.9em; }
+  pre { background: #f5f5f5; padding: 1em; border-radius: 6px; overflow-x: auto; font-size: 0.85em; border: 1px solid #e0e0e0; }
+  .req { background: #fff; border-left: 4px solid #1565c0; padding: 0.5em 1em; margin: 0.8em 0; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .req h4 { margin: 0 0 0.3em; color: #1565c0; }
+  .req p { margin: 0.2em 0; }
+  .req .crit { font-size: 0.9em; color: #2e7d32; font-style: italic; }
+  .subreq { background: #f5f5f5; border-left: 3px solid #78909c; padding: 0.4em 1em; margin: 0.6em 0; border-radius: 3px; }
+  .toc { background: #e3f2fd; padding: 1em 1.5em; border-radius: 8px; margin: 1em 0; }
+  .toc a { color: #1565c0; text-decoration: none; display: block; padding: 0.15em 0; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .l2 { padding-left: 1.5em; font-size: 0.95em; }
+  .toc .l3 { padding-left: 3em; font-size: 0.9em; }
+  .meta { color: #888; font-size: 0.85em; margin-top: 2em; border-top: 1px solid #ddd; padding-top: 1em; }
+  table { border-collapse: collapse; width: 100%; margin: 0.8em 0; }
+  th, td { border: 1px solid #ddd; padding: 0.5em 0.7em; text-align: left; }
+  th { background: #37474f; color: #fff; }
+  tr:nth-child(even) td { background: #f9f9f9; }
+  .badge { display: inline-block; background: #1565c0; color: #fff; padding: 0.1em 0.6em; border-radius: 10px; font-size: 0.75em; font-weight: bold; }
+  .badge-fn { background: #e65100; }
+  .badge-rnf { background: #6a1b9a; }
+  summary { cursor: pointer; font-weight: bold; color: #1565c0; padding: 0.3em 0; }
+</style>
+</head>
+<body>
+
+<h1>📋 LinkGuard Releasev4 — Reporte de Requerimientos</h1>
+<p style="font-size:0.95em;color:#555;">Documento de definición de requerimientos funcionales, no funcionales, casos de uso y restricciones técnicas del sistema LinkGuard v4.</p>
+
+<div class="toc">
+<strong>Contenido</strong>
+<a href="#s1">1. Definición del problema</a>
+<a href="#s2" class="l2">2. Usuarios y casos de uso</a>
+<a href="#s3" class="l2">3. Requerimientos funcionales</a>
+<a href="#s3-1" class="l3">RF-01 Registro de peers</a>
+<a href="#s3-2" class="l3">RF-02 Asignación automática de direcciones IP</a>
+<a href="#s3-3" class="l3">RF-03 Gestión de redes virtuales</a>
+<a href="#s3-4" class="l3">RF-04 Distribución de configuración</a>
+<a href="#s3-5" class="l3">RF-05 Actualización de configuración</a>
+<a href="#s3-6" class="l3">RF-06 Revocación de peers</a>
+<a href="#s3-7" class="l3">RF-07 Monitoreo de estado</a>
+<a href="#s3-8" class="l3">RF-08 Interfaces de administración</a>
+<a href="#s4" class="l2">4. Requerimientos no funcionales</a>
+<a href="#s4-1" class="l3">RNF-01 Seguridad</a>
+<a href="#s4-2" class="l3">RNF-02 Aislamiento</a>
+<a href="#s4-3" class="l3">RNF-03 Persistencia del estado</a>
+<a href="#s4-4" class="l3">RNF-04 Observabilidad</a>
+<a href="#s4-5" class="l3">RNF-05 Reproducibilidad</a>
+<a href="#s4-6" class="l3">RNF-06 Mantenibilidad</a>
+<a href="#s5" class="l2">5. Restricciones técnicas y operativas</a>
+<a href="#s5-1" class="l3">5.1 Requisitos del sistema</a>
+<a href="#s5-2" class="l3">5.2 Software y dependencias</a>
+<a href="#s5-3" class="l3">5.3 Restricciones operativas y de configuración</a>
+<a href="#s5-4" class="l3">5.4 Restricciones de red y conectividad</a>
+<a href="#s5-5" class="l3">5.5 Seguridad y permisos</a>
+<a href="#s5-6" class="l3">5.6 NAT, forwarding y utilidades</a>
+<a href="#s5-7" class="l3">5.7 Concurrencia, persistencia y estado</a>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s1">1. Definición del problema</h2>
+
+<p>Las organizaciones que operan infraestructuras distribuidas —ya sea por la presencia de múltiples sucursales, servicios desplegados en distintas ubicaciones o personal remoto— requieren mecanismos confiables para interconectar nodos de manera segura. Las redes privadas virtuales (VPN) constituyen una solución adoptada para este fin, y protocolos como WireGuard han ganado popularidad debido a su simplicidad, desempeño y modelo criptográfico moderno.</p>
+
+<p>Si bien WireGuard resuelve eficazmente el cifrado y transporte del tráfico, no aborda de forma nativa los problemas de orquestación, gestión de estado y operación a escala. En escenarios donde el número de nodos crece o donde la topología de red cambia dinámicamente, la administración manual de configuraciones, claves y rutas se vuelve propensa a errores, difícil de auditar y costosa en términos operativos.</p>
+
+<p>Las soluciones existentes para la gestión de VPN suelen presentar al menos una de las siguientes limitaciones: dependencia de interfaces gráficas, uso extensivo de secretos estáticos, dependencias de terceros y registro por email. Estas limitaciones dificultan su adopción en entornos automatizados o con requerimientos estrictos de seguridad y auditabilidad.</p>
+
+<p>El problema que aborda LinkGuard es, por tanto, la falta de un mecanismo ligero y explícito para orquestar redes WireGuard de manera segura, declarativa y tolerante a fallos, manteniendo claridad en el modelo de control y evitando complejidad innecesaria en los nodos finales.</p>
+
+<!-- ============================================================ -->
+<h2 id="s2">2. Usuarios y casos de uso</h2>
+
+<p>LinkGuard está orientado a usuarios técnicos que requieren gestionar conectividad segura entre nodos sin delegar completamente el control a soluciones opacas. Los usuarios objetivo incluyen:</p>
+
+<ul>
+  <li><strong>Administradores de sistemas y redes</strong>, responsables de operar infraestructuras distribuidas y mantener conectividad segura entre servidores, sucursales o entornos híbridos.</li>
+  <li><strong>Entornos académicos o de laboratorio</strong>, donde se busca experimentar con topologías de red y mecanismos de control sin la sobrecarga de soluciones comerciales.</li>
+</ul>
+
+<p>A partir de estos perfiles, se identifican los siguientes casos de uso principales:</p>
+<ul>
+  <li><strong>Incorporación dinámica de peers</strong>: un nodo puede registrarse automáticamente en la red y obtener su configuración sin intervención manual.</li>
+  <li><strong>Gestión centralizada de topologías</strong>: definición y modificación de redes, asignación de direcciones IP y rutas desde un punto único de control.</li>
+  <li><strong>Separación de responsabilidades</strong>: los nodos finales no deben poseer credenciales con alcance administrativo ni conocimiento global del sistema.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="s3">3. Requerimientos funcionales</h2>
+
+<div class="req" id="s3-1">
+<h4><span class="badge badge-fn">RF-01</span> Registro de peers</h4>
+<p>El sistema debe permitir el registro de peers mediante tokens de activación, asociando de forma única cada peer a una identidad interna, de forma que un nodo solo puede pertenecer a una red por limitación de alcance y diseño (en trabajo a futuro sería posible tener múltiples interfaces).</p>
+<p class="crit">✔ Criterio de verificación: el peer queda registrado y es consultable por el orquestador.</p>
+</div>
+
+<div class="req" id="s3-2">
+<h4><span class="badge badge-fn">RF-02</span> Asignación automática de direcciones IP</h4>
+<p>El sistema debe asignar automáticamente una dirección IP del túnel a cada peer dentro del rango definido para la red correspondiente, evitando colisiones.</p>
+<p class="crit">✔ Criterio de verificación: cada peer recibe una IP única dentro del CIDR configurado.</p>
+</div>
+
+<div class="req" id="s3-3">
+<h4><span class="badge badge-fn">RF-03</span> Gestión de redes virtuales</h4>
+<p>El sistema debe permitir la creación, consulta y eliminación de redes VPN, cada una con su propio espacio de direcciones y configuración.</p>
+<p class="crit">✔ Criterio de verificación: las redes pueden administrarse de forma independiente y no interfieren entre sí.</p>
+</div>
+
+<div class="req" id="s3-4">
+<h4><span class="badge badge-fn">RF-04</span> Distribución de configuración</h4>
+<p>El orquestador debe generar y distribuir la configuración WireGuard correspondiente a cada peer, incluyendo claves públicas, endpoints y AllowedIPs.</p>
+<p class="crit">✔ Criterio de verificación: el peer puede aplicar la configuración y establecer un túnel funcional.</p>
+</div>
+
+<div class="req" id="s3-5">
+<h4><span class="badge badge-fn">RF-05</span> Actualización de configuración</h4>
+<p>El sistema debe permitir la actualización incremental de la configuración de los peers cuando se produzcan cambios en la topología o en los parámetros de la red.</p>
+<p class="crit">✔ Criterio de verificación: el peer detecta cambios y aplica únicamente las modificaciones necesarias.</p>
+</div>
+
+<div class="req" id="s3-6">
+<h4><span class="badge badge-fn">RF-06</span> Revocación de peers</h4>
+<p>El sistema debe permitir la eliminación de un peer, impidiendo su participación futura en la red.</p>
+<p class="crit">✔ Criterio de verificación: el peer eliminado no puede establecer túneles ni intercambiar tráfico.</p>
+</div>
+
+<div class="req" id="s3-7">
+<h4><span class="badge badge-fn">RF-07</span> Monitoreo de estado</h4>
+<p>El sistema debe mantener información básica del estado de los peers, como actividad reciente o conectividad.</p>
+<p class="crit">✔ Criterio de verificación: el orquestador puede identificar peers activos e inactivos.</p>
+</div>
+
+<div class="req" id="s3-8">
+<h4><span class="badge badge-fn">RF-08</span> Interfaces de administración</h4>
+<p>El sistema debe ofrecer interfaces de administración (CLI) para la gestión de redes, peers y configuraciones.</p>
+<p class="crit">✔ Criterio de verificación: las operaciones administrativas pueden realizarse sin acceso directo a todo el sistema.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s4">4. Requerimientos no funcionales</h2>
+
+<div class="req" id="s4-1">
+<h4><span class="badge badge-rnf">RNF-01</span> Seguridad</h4>
+<p>El sistema debe garantizar la confidencialidad e integridad de las comunicaciones, apoyándose en los mecanismos criptográficos de WireGuard y en controles de acceso para el plano de control.</p>
+</div>
+
+<div class="req" id="s4-2">
+<h4><span class="badge badge-rnf">RNF-02</span> Aislamiento</h4>
+<p>El sistema debe asegurar el aislamiento entre redes y usuarios, evitando accesos no autorizados.</p>
+</div>
+
+<div class="req" id="s4-3">
+<h4><span class="badge badge-rnf">RNF-03</span> Persistencia del estado</h4>
+<p>El orquestador debe mantener un estado persistente, de modo que la información crítica sobreviva a reinicios del sistema.</p>
+</div>
+
+<div class="req" id="s4-4">
+<h4><span class="badge badge-rnf">RNF-04</span> Observabilidad</h4>
+<p>El sistema debe proporcionar registros y métricas suficientes para diagnosticar fallos y evaluar su comportamiento.</p>
+</div>
+
+<div class="req" id="s4-5">
+<h4><span class="badge badge-rnf">RNF-05</span> Reproducibilidad</h4>
+<p>El sistema debe poder ser desplegado y probado en entornos controlados siguiendo procedimientos documentados. Debe ser posible replicarlo tanto con dispositivos virtuales como dispositivos físicos; tanto expuestos a internet como detrás de NAT o con IP ruteables.</p>
+</div>
+
+<div class="req" id="s4-6">
+<h4><span class="badge badge-rnf">RNF-06</span> Mantenibilidad</h4>
+<p>El diseño del sistema debe favorecer la extensión y modificación futura, permitiendo incorporar nuevas funcionalidades sin reescrituras completas.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s5">5. Restricciones técnicas y operativas</h2>
+
+<p>Las restricciones técnicas y operativas del sistema LinkGuard se dividen principalmente en requisitos de entorno, límites de configuración (cuotas) y condiciones de conectividad de red. Con el fin de mantener simplicidad, se decidió evitar dependencias externas obligatorias, como bases de datos o sistemas de mensajería.</p>
+
+<h3 id="s5-1">5.1 Requisitos del sistema</h3>
+<p>El sistema operativo debe ser Linux, compatible con distribuciones que utilicen systemd (Debian, Ubuntu, Fedora, RHEL, CentOS, Arch, openSUSE, Alpine). Usa los manejadores de paquetes: <code>apt</code>, <code>dnf</code>, <code>yum</code>, <code>pacman</code>, <code>zypper</code>, <code>apk</code>. El instalador fallará si <code>systemctl</code> no está disponible.</p>
+
+<h3 id="s5-2">5.2 Software y dependencias</h3>
+<ul>
+  <li><strong>Python:</strong> Requiere versión <strong>3.8</strong> o superior junto con <code>pip</code>, <code>python3</code>, <code>python3-pip</code>, <code>python3-venv</code>.</li>
+  <li><strong>Librerías utilizadas:</strong> PyJWT &gt;= 2.7.0. El resto son parte de la biblioteca estándar de Python 3: argparse, hashlib, ipaddress, json, logging, os, secrets, socket, ssl, subprocess, sys, threading, time, xmlrpc, socketserver, typing.</li>
+  <li><strong>WireGuard:</strong> Es imprescindible tener instalado <strong>wireguard-tools</strong> (<code>wg</code> y <code>wg-quick</code>).</li>
+  <li><strong>Utilidades:</strong> El sistema depende de <code>curl</code>, <code>ca-certificates</code>, <code>openssl</code> e <code>iptables</code> (o <code>iptables-nft</code>).</li>
+  <li><strong>Privilegios:</strong> Tanto la instalación como la ejecución del daemon deben realizarse como root (o con sudo), ya que se requiere manipular interfaces de red.</li>
+</ul>
+
+<h3 id="s5-3">5.3 Restricciones operativas y de configuración</h3>
+<ul>
+  <li>Máximo de <strong>50 peers</strong> por red/tenant. Máximo de <strong>10 redes</strong> gestionadas.</li>
+  <li>Los tokens de sesión JWT tienen una duración corta (por defecto 10 minutos o 600 segundos); el agente debe renovarlos automáticamente antes de que expiren para mantener la conectividad.</li>
+  <li>Un peer se marca como inactivo si el orquestador no recibe un heartbeat en un periodo de <strong>180 segundos</strong> (<code>HEARTBEAT_TTL_SEC</code>). El intervalo estándar de envío de heartbeat es cada 25 segundos.</li>
+  <li>El orquestador no arrancará si detecta tokens de administración (<code>ADMIN_TOKEN</code>) o de usuario con valores por defecto inseguros (ej: <code>12345</code>, <code>password</code>).</li>
+  <li>Cada peer solo tiene una red dado que el agente solo soporta una interfaz de WireGuard.</li>
+  <li>El orquestador solo puede ser una instancia dado que no admite balanceo.</li>
+</ul>
+
+<h3 id="s5-4">5.4 Restricciones de red y conectividad</h3>
+
+<h4>Puertos obligatorios</h4>
+<ol>
+  <li><strong>TCP 8000:</strong> Debe estar abierto para el acceso a la API XML-RPC del orquestador.</li>
+  <li><strong>UDP 51820:</strong> Puerto estándar de WireGuard que debe ser accesible para el tráfico del túnel.</li>
+</ol>
+
+<h4>Limitaciones por topología</h4>
+<ol>
+  <li><strong>Mesh puro:</strong> Todos los peers deben tener una IP pública o estar detrás de un NAT full-cone. Si un peer tiene NAT simétrico, no podrá establecer conexiones directas en esta topología.</li>
+  <li><strong>Hub-Spoke:</strong> Los nodos remotos no necesitan IP pública, pero el tráfico está restringido a pasar siempre por el hub.</li>
+  <li><strong>Hub-Mesh:</strong> Esta topología combina elementos de mesh y hub-spoke, permitiendo que algunos nodos tengan conectividad directa mientras otros dependen del hub.</li>
+</ol>
+
+<h3 id="s5-5">5.5 Seguridad y permisos</h3>
+<p>El peer no podrá registrarse ni operar si la variable <code>ORCH_TOKEN</code> no tiene un valor válido proporcionado por el administrador. Archivos sensibles como <code>peer.env</code> y las claves privadas deben tener estrictamente permisos 600 (solo lectura para root).</p>
+
+<h3 id="s5-6">5.6 NAT, forwarding y utilidades del sistema</h3>
+<p>Para soportar conectividad entre redes y salida a Internet cuando aplica, el <em>hub-agent</em> configura reglas de <strong>iptables</strong> y habilita <strong>IP forwarding</strong> vía <code>sysctl</code>. El flujo garantiza reglas base (FORWARD y NAT MASQUERADE) de forma idempotente: primero verifica si existen y sólo inserta cuando faltan, reduciendo efectos colaterales por reinicios o reprovisionamiento.</p>
+
+<h3 id="s5-7">5.7 Concurrencia, persistencia y gestión del estado</h3>
+<p>El orquestador mantiene un estado global en memoria protegido por un <code>RLock</code> (sección crítica), y lo persiste de manera atómica en JSON al actualizar peers/redes o incrementar <code>config_version</code>. Esto permite distribuir cambios por versión y facilita detectar si un peer está desfasado mediante el <em>heartbeat</em>.</p>
+
+<table>
+<tr><th>Parámetro</th><th>Valor por defecto</th><th>Descripción</th></tr>
+<tr><td><code>HEARTBEAT_TTL_SEC</code></td><td>180</td><td>Segundos sin heartbeat para marcar peer inactivo</td></tr>
+<tr><td><code>WG_HEARTBEAT_INTERVAL</code></td><td>25</td><td>Intervalo de envío de heartbeat (segundos)</td></tr>
+<tr><td><code>JWT_TTL</code></td><td>600</td><td>Duración del token JWT (segundos)</td></tr>
+<tr><td><code>MAX_PEERS_PER_USER</code></td><td>50</td><td>Máximo de peers por tenant</td></tr>
+<tr><td><code>MAX_NETWORKS_PER_USER</code></td><td>10</td><td>Máximo de redes por tenant</td></tr>
+<tr><td><code>WG_LISTEN_PORT</code></td><td>51820</td><td>Puerto UDP para WireGuard</td></tr>
+<tr><td><code>ORCH_PORT</code></td><td>8000</td><td>Puerto TCP para API XML-RPC</td></tr>
+</table>
+
+<div class="meta">
+Generado: Sun Jun 28 2026 &mdash; LinkGuard Releasev4<br>
+Documento basado en la implementación y pruebas del sistema con QEMU lab + EC2 AWS.
+
+<h2 id="s6">6. Trazabilidad requerimiento → pruebas</h2>
+<p>Cada requerimiento funcional y no funcional se valida mediante una o más pruebas. La tabla siguiente muestra la correspondencia entre requerimientos, casos de prueba y su resultado (553/553 tests exitosos, 0 fallos).</p>
+
+<table>
+<tr><th>Req</th><th>Archivo / Test</th><th>Resultado</th><th>Infraestructura</th></tr>
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RF-01 Registro de peers</td></tr>
+<tr class="pass"><td>RF-01</td><td><code>test_endpoints.py::TestPeerEndpoints::test_create</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-01</td><td><code>test_endpoints.py::TestPeerEndpoints::test_get</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-01</td><td><code>test_endpoints.py::TestPeerEndpoints::test_list</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-01</td><td><code>test_endpoints.py::TestPeerRegister::test_register_new_peer</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-01</td><td><code>test_endpoints.py::TestPeerRegister::test_register_existing_peer</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-01</td><td><code>test_endpoints.py::TestPeerRegister::test_register_cross_tenant</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-01</td><td><code>test_commands.py::TestCmdRegister::test_register_success</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-01</td><td><code>test_commands.py::TestCmdRegister::test_register_applies_config</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-01</td><td><code>test_orch_cli.py::TestPeers::test_peer_list</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-01</td><td><code>test_orch_cli.py::TestPeers::test_peer_get</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-01</td><td><code>test_e2e_full_stack.py::test_03_register_peers</code></td><td>✅</td><td>mock + in-process</td></tr>
+<tr class="pass"><td>RF-01</td><td><code>test_real_orchestrator_integration.py::test_qemu_peers_registered_on_real_orchestrator</code></td><td>✅</td><td>EC2 real + QEMU</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RF-02 Asignación automática de direcciones IP</td></tr>
+<tr class="pass"><td>RF-02</td><td><code>test_network_alloc.py::TestAllocateIP::test_first_ip</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-02</td><td><code>test_network_alloc.py::TestAllocateIP::test_skip_used</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-02</td><td><code>test_network_alloc.py::TestAllocateIP::test_full_subnet</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-02</td><td><code>test_network_alloc.py::TestAllocateIP::test_invalid_cidr</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-02</td><td><code>test_network_alloc.py::TestAssignIP::test_assign_new</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-02</td><td><code>test_network_alloc.py::TestAssignIP::test_reuse_existing</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-02</td><td><code>test_network_alloc.py::TestReleaseIP::test_release_existing</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-02</td><td><code>test_endpoints.py::TestPeerAssignNetworkExtended::test_assign_network_success</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-02</td><td><code>test_endpoints.py::TestPeerAssignNetworkExtended::test_assign_network_ip_conflict</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-02</td><td><code>test_endpoints.py::TestPeerAssignNetworkExtended::test_assign_network_ip_outside_cidr</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-02</td><td><code>test_real_orchestrator_integration.py::test_qemu_peers_registered_on_real_orchestrator</code></td><td>✅</td><td>EC2 real + QEMU</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RF-03 Gestión de redes virtuales</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_endpoints.py::TestNetworkEndpoints::test_create</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_endpoints.py::TestNetworkEndpoints::test_create_duplicate</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_endpoints.py::TestNetworkEndpoints::test_list</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_endpoints.py::TestNetworkEndpoints::test_get</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_endpoints.py::TestNetworkEndpoints::test_get_missing</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_endpoints.py::TestNetworkEndpoints::test_delete</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_endpoints.py::TestNetworkEndpoints::test_set_topology</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_endpoints.py::TestNetworkEndpoints::test_set_topology_invalid</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_endpoints.py::TestNetworkEndpoints::test_network_peers</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_orch_cli.py::TestNetworks::test_net_create_defaults</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_orch_cli.py::TestNetworks::test_net_set_topology</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_integration_xml_rpc_server.py::TestIntegrationOrch::test_network_crud</code></td><td>✅</td><td>in-process</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_e2e_full_stack.py::test_02_create_network</code></td><td>✅</td><td>mock + in-process</td></tr>
+<tr class="pass"><td>RF-03</td><td><code>test_e2e_hub_agent_orchestrator.py::test_03_create_network</code></td><td>✅</td><td>mock + in-process</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RF-04 Distribución de configuración</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_config_gen.py::TestBuildInterfaceBlock::test_basic_interface</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_config_gen.py::TestBuildHubBlock::test_hub_block_hub_spoke</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_config_gen.py::TestBuildHubBlock::test_hub_block_hub_mesh</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_config_gen.py::TestBuildMeshBlocks::test_with_peers</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_endpoints.py::TestConfigEndpoints::test_config_get</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_endpoints.py::TestConfigGetPeerConfig::test_hub_spoke_config</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_endpoints.py::TestConfigGetPeerConfig::test_mesh_config</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_endpoints.py::TestConfigGetPeerConfig::test_hub_mesh_config</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_e2e_full_stack.py::test_04_config_hub_spoke</code></td><td>✅</td><td>mock + in-process</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_e2e_full_stack.py::test_06_config_mesh</code></td><td>✅</td><td>mock + in-process</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_e2e_full_stack.py::test_08_config_hub_mesh</code></td><td>✅</td><td>mock + in-process</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_e2e_hub_agent_orchestrator.py::test_06_config_get</code></td><td>✅</td><td>mock + in-process</td></tr>
+<tr class="pass"><td>RF-04</td><td><code>test_wireguard_integration.py::TestConfigGenConLlavesReales::test_config_gen_produce_formato_valido</code></td><td>✅</td><td>QEMU real</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RF-05 Actualización de configuración</td></tr>
+<tr class="pass"><td>RF-05</td><td><code>test_commands.py::TestCmdHeartbeat::test_heartbeat_config_version_change</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-05</td><td><code>test_commands.py::TestCmdHeartbeat::test_heartbeat_mesh_peers_hash_change</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-05</td><td><code>test_e2e_full_stack.py::test_05_transition_to_mesh</code></td><td>✅</td><td>mock + in-process</td></tr>
+<tr class="pass"><td>RF-05</td><td><code>test_e2e_full_stack.py::test_07_transition_to_hub_mesh</code></td><td>✅</td><td>mock + in-process</td></tr>
+<tr class="pass"><td>RF-05</td><td><code>test_real_orchestrator_integration.py::test_qemu_peer_services_and_handshakes</code></td><td>✅</td><td>EC2 real + QEMU</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RF-06 Revocación de peers</td></tr>
+<tr class="pass"><td>RF-06</td><td><code>test_endpoints.py::TestPeerAdminOps::test_unregister</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-06</td><td><code>test_endpoints.py::TestPeerEndpoints::test_delete</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-06</td><td><code>test_endpoints.py::TestPeerUnregisterExtended::test_unregister_admin_token</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-06</td><td><code>test_endpoints.py::TestPeerUnregisterExtended::test_unregister_jwt</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-06</td><td><code>test_endpoints.py::TestPeerUnregisterExtended::test_unregister_missing_peer</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-06</td><td><code>test_orch_cli.py::TestPeers::test_peer_unregister</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-06</td><td><code>test_integration_xml_rpc_server.py::TestIntegrationOrch::test_peer_unregister</code></td><td>✅</td><td>in-process</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RF-07 Monitoreo de estado</td></tr>
+<tr class="pass"><td>RF-07</td><td><code>test_endpoints.py::TestPeerEndpoints::test_heartbeat</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-07</td><td><code>test_endpoints.py::TestPeerEndpoints::test_stats</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-07</td><td><code>test_endpoints.py::TestPeerEndpoints::test_cleanup</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-07</td><td><code>test_endpoints.py::TestPeerHeartbeatExtended::test_heartbeat_mesh_topology</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-07</td><td><code>test_endpoints.py::TestPeerHeartbeatExtended::test_heartbeat_hub_mesh_topology</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-07</td><td><code>test_endpoints.py::TestPeerHeartbeatExtended::test_endpoint_override_private</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-07</td><td><code>test_commands.py::TestCmdHeartbeat::test_basic_heartbeat</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-07</td><td><code>test_e2e_hub_agent_orchestrator.py::test_05_heartbeat</code></td><td>✅</td><td>mock + in-process</td></tr>
+<tr class="pass"><td>RF-07</td><td><code>test_wireguard_integration.py::TestMultitunelYEstado::test_estado_wg_show</code></td><td>✅</td><td>QEMU real</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RF-08 Interfaces de administración (CLI)</td></tr>
+<tr class="pass"><td>RF-08</td><td><code>test_orch_cli.py</code> (47 tests)</td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-08</td><td><code>test_wg_auto_cli.py</code> (21 tests)</td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-08</td><td><code>test_orch_cli.py::TestArgparseContract::test_token_before_subcommand</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RF-08</td><td><code>test_orch_cli.py::TestArgparseContract::test_token_after_subcommand_rejected</code></td><td>✅</td><td>mock</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RNF-01 Seguridad</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_auth.py::TestJWT::test_encode_decode</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_auth.py::TestJWT::test_decode_expired</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_auth.py::TestRevocation::test_revoke_and_check</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_auth.py::TestAuthFromToken::test_revoked_jwt</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_auth.py::TestScopes::test_exact_scope</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_auth.py::TestScopes::test_wildcard_all</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_endpoints.py::TestAuthEndpoints::test_jwt_issue</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_endpoints.py::TestAuthEndpoints::test_jwt_verify</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_endpoints.py::TestAuthEndpoints::test_jwt_revoke</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_endpoints.py::TestRequirePeerJwt::test_valid_jwt</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_endpoints.py::TestRequirePeerJwt::test_cross_tenant_forbidden</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_endpoints.py::TestRequirePeerJwt::test_missing_scope</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_hub_agent.py::TestValidateToken::test_valid_token</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-01</td><td><code>test_integration_xml_rpc_server.py::TestIntegrationOrch::test_jwt_lifecycle</code></td><td>✅</td><td>in-process</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RNF-02 Aislamiento</td></tr>
+<tr class="pass"><td>RNF-02</td><td><code>test_auth.py::TestEnforceTenantForPeer::test_cross_tenant</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-02</td><td><code>test_auth.py::TestFilterEventsForTenant::test_exclude_other_peer_events</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-02</td><td><code>test_endpoints.py::TestPeerRegister::test_register_cross_tenant</code></td><td>✅</td><td>mock</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RNF-03 Persistencia del estado</td></tr>
+<tr class="pass"><td>RNF-03</td><td><code>test_endpoints.py::TestOrchEndpoints::test_state_persist</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-03</td><td><code>test_endpoints.py::TestConfigEndpoints::test_state_reset</code></td><td>✅</td><td>mock</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RNF-04 Observabilidad</td></tr>
+<tr class="pass"><td>RNF-04</td><td><code>test_endpoints.py::TestOrchEndpoints::test_health</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-04</td><td><code>test_endpoints.py::TestOrchEndpoints::test_state_dump</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-04</td><td><code>test_endpoints.py::TestOrchEndpoints::test_events_empty</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-04</td><td><code>test_endpoints.py::TestOrchEndpoints::test_metrics_admin</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-04</td><td><code>test_endpoints.py::TestMetricsJwt::test_jwt_tenant_scoped</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-04</td><td><code>test_integration_xml_rpc_server.py::TestIntegrationOrch::test_events</code></td><td>✅</td><td>in-process</td></tr>
+<tr class="pass"><td>RNF-04</td><td><code>test_integration_xml_rpc_server.py::TestIntegrationOrch::test_metrics</code></td><td>✅</td><td>in-process</td></tr>
+<tr class="pass"><td>RNF-04</td><td><code>test_e2e_hub_agent_orchestrator.py::test_07_metrics</code></td><td>✅</td><td>mock + in-process</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RNF-05 Reproducibilidad</td></tr>
+<tr class="pass"><td>RNF-05</td><td><code>test_wireguard_integration.py</code> (10 tests)</td><td>✅</td><td>QEMU real</td></tr>
+<tr class="pass"><td>RNF-05</td><td><code>test_real_orchestrator_integration.py</code> (3 tests)</td><td>✅</td><td>EC2 real + QEMU</td></tr>
+<tr class="pass"><td>RNF-05</td><td><code>test_e2e_full_stack.py</code> (14 tests)</td><td>✅</td><td>mock + in-process</td></tr>
+<tr class="pass"><td>RNF-05</td><td><code>test_e2e_hub_agent_orchestrator.py</code> (8 tests)</td><td>✅</td><td>mock + in-process</td></tr>
+<tr class="pass"><td>RNF-05</td><td><code>test_integration_xml_rpc_server.py</code> (17 tests)</td><td>✅</td><td>in-process</td></tr>
+<tr class="pass"><td>RNF-05</td><td><code>test_hub_agent.py</code> (65 tests)</td><td>✅</td><td>mock</td></tr>
+
+<tr><td colspan="4" style="background:#e3f2fd;font-weight:bold;">RNF-06 Mantenibilidad</td></tr>
+<tr class="pass"><td>RNF-06</td><td><code>test_config.py::TestAutoApproveRules</code> (5 tests)</td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-06</td><td><code>test_config_gen.py::TestBuildMeshBlocks::test_mesh_peer_not_alive_still_includes_endpoint</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-06</td><td><code>test_config_gen.py::TestBuildMeshBlocks::test_mesh_peer_no_endpoint_omitted</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-06</td><td><code>test_nat.py::TestDetectNat (5 tests)</code></td><td>✅</td><td>mock</td></tr>
+<tr class="pass"><td>RNF-06</td><td><code>test_wireguard_integration.py::TestNATTypeDetection::test_detectar_nat_type_en_vm</code></td><td>✅</td><td>QEMU real</td></tr>
+</table>
+
+<h3>6.1 Resumen por requerimiento</h3>
+<table>
+<tr><th>Requerimiento</th><th>Tests asociados</th><th>Resultado</th></tr>
+<tr class="pass"><td>RF-01 Registro de peers</td><td>12+</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RF-02 Asignación automática de IP</td><td>11</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RF-03 Gestión de redes virtuales</td><td>14</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RF-04 Distribución de configuración</td><td>13</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RF-05 Actualización de configuración</td><td>5</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RF-06 Revocación de peers</td><td>7</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RF-07 Monitoreo de estado</td><td>9</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RF-08 Interfaces de administración</td><td>68+ (CLI)</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RNF-01 Seguridad</td><td>14</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RNF-02 Aislamiento</td><td>3</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RNF-03 Persistencia del estado</td><td>2</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RNF-04 Observabilidad</td><td>8</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RNF-05 Reproducibilidad</td><td>117+ (5 suites)</td><td>✅ Todos pasan</td></tr>
+<tr class="pass"><td>RNF-06 Mantenibilidad</td><td>12+</td><td>✅ Todos pasan</td></tr>
+<tr style="border-top: 2px solid #333;"><td><strong>TOTAL</strong></td><td><strong>553 tests</strong></td><td><strong>✅ 553/553</strong></td></tr>
+</table>
+</div>
+
+</body>
+</html>

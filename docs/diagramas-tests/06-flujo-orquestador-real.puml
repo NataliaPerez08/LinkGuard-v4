@@ -1,0 +1,65 @@
+@startuml
+!theme plain
+skinparam backgroundColor #fafafa
+skinparam node {
+  BorderColor #c62828
+  BackgroundColor #ffebee
+}
+skinparam cloud {
+  BackgroundColor #e8f5e9
+}
+
+title Flujo Orquestador Real (EC2 + QEMU)\n3 tests · contra 34.193.139.170
+
+node "Orquestador\nEC2 34.193.139.170\nUbuntu admin/linkguard123!" as EC2
+node "QEMU orq\n192.168.100.10\nhost-lab" as ORQ_VM
+node "QEMU pa\n192.168.100.20\nhost-lab" as PA_VM
+node "QEMU pb\n192.168.100.30\nhost-lab" as PB_VM
+
+cloud "Internet / AWS SG" as NET
+cloud "br0/br1/br2\nred local QEMU" as BR
+
+EC2 -down- NET
+NET -down- BR
+ORQ_VM -up- BR
+PA_VM -up- BR
+PB_VM -up- BR
+
+note over EC2 : orch-cli --admin-token ...\nport 8000/RPC2\nWG Hub: 10.20.30.1
+
+== test_register_qemu_peers ==
+PA_VM -> EC2 : register_peer(qemu-pa, pubkey, user_id=qemu-pa)
+PB_VM -> EC2 : register_peer(qemu-pb, pubkey, user_id=qemu-pb)
+ORQ_VM -> EC2 : register_peer(qemu-orq, pubkey, user_id=qemu-orq)
+EC2 --> ORQ_VM : {tunnel_ip: 10.20.30.7}
+EC2 --> PA_VM : {tunnel_ip: 10.20.30.9}
+EC2 --> PB_VM : {tunnel_ip: 10.20.30.10}
+note over EC2 : wg show default → 3 peers visibles\nwg show default endpoints → IPs correctas
+note over EC2 : orch-cli list-peers --network default\n→ peer01 peer02 peer03
+note over ORQ_VM : user_id=qemu-orq (tenant)
+note over PA_VM, PB_VM : user_id=qemu-pa, qemu-pb
+
+== test_handshake_qemu_peers ==
+PA_VM ->> EC2 : handshake iniciado (wg-quick up)
+PB_VM ->> EC2 : handshake iniciado
+ORQ_VM ->> EC2 : handshake iniciado
+note over EC2 : wait 10s tras handshakes
+EC2 -> EC2 : wg show default latest-handshakes\n→ todos los peers > 0 (reciente)
+
+== test_ping_between_qemu_peers ==
+PA_VM -> EC2 : ping -I wg0 10.20.30.10
+EC2 -> PB_VM : reenvía (hub-spoke)
+PB_VM --> EC2 : pong
+EC2 --> PA_VM : pong
+note over PA_VM : ping a 10.20.30.10 (pb) exitoso
+
+PA_VM -> EC2 : ping -I wg0 10.20.30.7
+EC2 --> PA_VM : pong
+note over PA_VM : ping a 10.20.30.7 (orq) exitoso
+
+PB_VM -> EC2 : ping -I wg0 10.20.30.9
+EC2 -> PA_VM : reenvía
+PA_VM --> EC2 : pong
+EC2 --> PB_VM : pong
+
+@enduml

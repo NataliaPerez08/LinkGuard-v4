@@ -27,107 +27,107 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     # core
-    sub.add_parser("health", parents=[shared])
-    sub.add_parser("metrics", parents=[shared])
-    sub.add_parser("events", parents=[shared])
+    sub.add_parser("health")
+    sub.add_parser("metrics")
+    sub.add_parser("events")
 
     # users (admin-only)
-    p_uc = sub.add_parser("user-create", parents=[shared])
+    p_uc = sub.add_parser("user-create")
     p_uc.add_argument("user_id")
 
-    sub.add_parser("user-list", parents=[shared])
+    sub.add_parser("user-list")
 
-    p_ug = sub.add_parser("user-get", parents=[shared])
+    p_ug = sub.add_parser("user-get")
     p_ug.add_argument("user_id")
 
-    p_ud = sub.add_parser("user-delete", parents=[shared])
+    p_ud = sub.add_parser("user-delete")
     p_ud.add_argument("user_id")
     p_ud.add_argument("--purge", action="store_true")
 
-    p_uit = sub.add_parser("issue-user-token", parents=[shared])
+    p_uit = sub.add_parser("issue-user-token")
     p_uit.add_argument("user_id")
 
     # auth
-    p_al = sub.add_parser("auth-login", help="Obtener JWT con user_id + user_token", parents=[shared])
+    p_al = sub.add_parser("auth-login", help="Obtener JWT con user_id + user_token")
     p_al.add_argument("user_id")
     p_al.add_argument("user_token")
     p_al.add_argument("--scopes", default="*", help="Scopes separados por coma (default: *)")
     p_al.add_argument("--ttl", type=int, default=None, help="TTL en segundos (default: server default)")
 
-    p_ar = sub.add_parser("auth-refresh", help="Renovar JWT existente antes de que expire", parents=[shared])
+    p_ar = sub.add_parser("auth-refresh", help="Renovar JWT existente antes de que expire")
     p_ar.add_argument("jwt_token", nargs="?", default=None,
                       help="JWT a renovar (default: $JWT)")
     p_ar.add_argument("--ttl", type=int, default=None, help="TTL en segundos (default: server default)")
 
-    sub.add_parser("auth-whoami", help="Decodificar el JWT actual y mostrar su payload", parents=[shared])
+    sub.add_parser("auth-whoami", help="Decodificar el JWT actual y mostrar su payload")
 
     # revoke
-    p_rev = sub.add_parser("revoke", parents=[shared])
+    p_rev = sub.add_parser("revoke")
     p_rev.add_argument("jti")
 
     # networks (admin-only create/delete; list/get/topology readable with tenant JWT in other clients)
-    p_nc = sub.add_parser("net-create", parents=[shared])
+    p_nc = sub.add_parser("net-create")
     p_nc.add_argument("network_id")
     p_nc.add_argument("tunnel_cidr")
     p_nc.add_argument("--topology", default="hub-spoke")
     p_nc.add_argument("--hub-peer-id", default="HUB")
     p_nc.add_argument("--user-id", default=None)
 
-    p_nl = sub.add_parser("net-list", parents=[shared])
+    p_nl = sub.add_parser("net-list")
     p_nl.add_argument("--user-id", default=None)
 
-    p_ng = sub.add_parser("net-get", parents=[shared])
+    p_ng = sub.add_parser("net-get")
     p_ng.add_argument("network_id")
 
-    p_nt = sub.add_parser("net-topology", parents=[shared])
+    p_nt = sub.add_parser("net-topology")
     p_nt.add_argument("network_id")
 
-    p_nd = sub.add_parser("net-delete", parents=[shared])
+    p_nd = sub.add_parser("net-delete")
     p_nd.add_argument("network_id")
     p_nd.add_argument("--purge", action="store_true")
 
     # F5: cambiar topología de una red existente (admin-only)
-    p_nst = sub.add_parser("net-set-topology", parents=[shared],
+    p_nst = sub.add_parser("net-set-topology",
                             help="Cambia la topología de una red ('hub-spoke', 'mesh' o 'hub-mesh')")
     p_nst.add_argument("network_id")
     p_nst.add_argument("topology", choices=["hub-spoke", "mesh", "hub-mesh"])  # HM-F5d
 
     # F5: listar peers mesh activos en una red
     p_mp = sub.add_parser("mesh-peers",
-                           help="Lista peers activos en una red mesh", parents=[shared])
+                           help="Lista peers activos en una red mesh")
     p_mp.add_argument("network_id")
     p_mp.add_argument("--peer-id", default=None,
                       help="peer_id del solicitante (para excluirlo de la lista)")
 
     # HM-F5e: nuevo subcomando — tabla de clasificación direct/relay en redes hub-mesh
     p_pr = sub.add_parser("peer-reachability",
-                           help="Muestra clasificación directo/relay de peers en una red hub-mesh", parents=[shared])
+                           help="Muestra clasificación directo/relay de peers en una red hub-mesh")
     p_pr.add_argument("network_id")
     p_pr.add_argument("--peer-id", default=None,
                       help="peer_id del solicitante (default: 'admin-query')")
 
     # peers
-    p_pl = sub.add_parser("peer-list", parents=[shared])
+    p_pl = sub.add_parser("peer-list")
     p_pl.add_argument("--user-id", default=None)
 
-    p_pg = sub.add_parser("peer-get", parents=[shared])
+    p_pg = sub.add_parser("peer-get")
     p_pg.add_argument("peer_id")
 
-    p_pu = sub.add_parser("peer-update-admin", parents=[shared])
+    p_pu = sub.add_parser("peer-update-admin")
     p_pu.add_argument("peer_id")
     p_pu.add_argument("fields_json")
 
-    p_pdel = sub.add_parser("peer-unregister", parents=[shared])
+    p_pdel = sub.add_parser("peer-unregister")
     p_pdel.add_argument("peer_id")
 
     # assign/remove network membership (admin-only)
-    p_an = sub.add_parser("assign-network", parents=[shared])
+    p_an = sub.add_parser("assign-network")
     p_an.add_argument("peer_id")
     p_an.add_argument("network_id")
     p_an.add_argument("ip")
     p_an.add_argument("--role", default=None)
 
-    p_rn = sub.add_parser("remove-network", parents=[shared])
+    p_rn = sub.add_parser("remove-network")
     p_rn.add_argument("peer_id")
     p_rn.add_argument("network_id")
 

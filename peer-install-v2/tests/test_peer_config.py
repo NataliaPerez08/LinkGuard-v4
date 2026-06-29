@@ -8,6 +8,7 @@ from peer_register import config
 
 class TestConfig:
     def test_orch_url_default(self):
+        importlib.reload(config)  # releer env limpio del conftest
         assert config.ORCH_URL == "http://127.0.0.1:17999/RPC2"
 
     def test_orch_token_from_env(self):

@@ -1,0 +1,52 @@
+@startuml
+!theme plain
+skinparam backgroundColor #fafafa
+skinparam node {
+  BorderColor #1565c0
+  BackgroundColor #e3f2fd
+}
+skinparam cloud {
+  BorderColor #1565c0
+  BackgroundColor #e8f5e9
+}
+
+title Escenario Hub-Spoke (Topología Estrella)\n2 tests · orq como hub central
+
+node "orq (HUB)\nQEMU VM\n192.168.100.10\n10.0.0.10" as HUB
+node "pa (SPOKE)\nQEMU VM\n192.168.100.20\n10.0.0.20" as PA
+node "pb (SPOKE)\nQEMU VM\n192.168.100.30\n10.0.0.30" as PB
+cloud "br0\n192.168.100.0/24" as MGMT
+cloud "br1\n10.0.0.0/24" as DATA
+
+PA -down- MGMT
+HUB -down- MGMT
+PB -down- MGMT
+
+HUB -down- DATA : eth1
+PA -down- DATA : eth1
+PB -down- DATA : eth1
+
+note left of HUB : WG: 10.99.0.1/24\nListenPort 51820\nip_forward=1\nPermite rutas asimétricas
+note left of PA : WG: 10.99.0.2/24\nEndpoint → orq:51820\nAllowedIPs: 10.99.0.0/24
+note right of PB : WG: 10.99.0.3/24\nEndpoint → orq:51820\nAllowedIPs: 10.99.0.0/24
+
+== test_hub_conecta_ambos_spokes ==
+PA -> HUB : wg-quick up (config spoke apuntando a orq)
+PB -> HUB : wg-quick up (config spoke apuntando a orq)
+HUB -> HUB : wg set peer pa endpoint + allowed-ips
+HUB -> HUB : wg set peer pb endpoint + allowed-ips
+note over HUB : wg show peers → [pa_pub, pb_pub]\nwg latest-handshakes → ambos > 0
+
+== test_spoke_habla_con_otro_spoke_via_hub ==
+PA -> HUB : ping -I wg0 10.99.0.3
+HUB --> PB : reenvía paquete (forwarding)
+PB --> HUB : respuesta
+HUB --> PA : reenvía respuesta
+note over PA : ping exitoso ←→ pb vía hub
+
+PB -> HUB : ping -I wg0 10.99.0.2
+HUB --> PA : reenvía
+PA --> HUB : respuesta
+HUB --> PB : reenvía
+
+@enduml

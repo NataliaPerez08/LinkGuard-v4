@@ -77,7 +77,9 @@ class TestBuildMeshBlocks:
         assert "10.20.30.2/32" in conf
         assert "Endpoint" in conf
 
-    def test_mesh_peer_not_alive_no_endpoint(self):
+    def test_mesh_peer_not_alive_still_includes_endpoint(self):
+        # El Endpoint se incluye siempre que exista, independientemente de alive
+        # (fix intencional: que WireGuard conozca la direccion para reconectar)
         d = {
             "peer": {"persistent_keepalive": 25},
             "mesh_peers": [
@@ -86,6 +88,19 @@ class TestBuildMeshBlocks:
         }
         conf = _build_mesh_blocks(d)
         assert "p2" in conf
+        assert "Endpoint = 10.0.0.3:51820" in conf
+        assert "alive=False" in conf
+
+    def test_mesh_peer_no_endpoint_omitted(self):
+        # Solo se omite Endpoint cuando mp_ep es None/vacio
+        d = {
+            "peer": {"persistent_keepalive": 25},
+            "mesh_peers": [
+                {"peer_id": "p3", "public_key": "pk3", "endpoint": None, "tunnel_ip": "10.20.30.4", "alive": False},
+            ],
+        }
+        conf = _build_mesh_blocks(d)
+        assert "p3" in conf
         assert "Endpoint" not in conf
 
 

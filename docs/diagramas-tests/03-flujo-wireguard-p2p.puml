@@ -1,0 +1,44 @@
+@startuml
+!theme plain
+skinparam backgroundColor #fafafa
+skinparam node {
+  BorderColor #1565c0
+  BackgroundColor #e3f2fd
+}
+skinparam cloud {
+  BorderColor #1565c0
+  BackgroundColor #e8f5e9
+}
+
+title Escenario WireGuard Directo P2P\n4 tests · VMs QEMU pa(192.168.100.20) ↔ pb(192.168.100.30)
+
+node "pa\nQEMU VM\n192.168.100.20\n10.0.0.20" as PA
+node "pb\nQEMU VM\n192.168.100.30\n10.0.0.30" as PB
+cloud "br1\n10.0.0.0/24" as NET
+
+PA -right- NET : eth1 (data)
+PB -right- NET : eth1 (data)
+
+note top of PA : WG: 10.99.0.2/24\nListenPort 51820
+note top of PB : WG: 10.99.0.3/24\nListenPort 51820
+
+== test_gen_keys ==
+note over PA, PB : wg genkey → /etc/wireguard/wg0.key\nwg pubkey → /etc/wireguard/wg0.pub\nAssert: len(key) == 44
+
+== test_tunel_conecta_y_hace_handshake ==
+PA -> PB : wg-quick up wg0\nEndpoint = 10.0.0.30:51820
+PB -> PA : wg-quick up wg0\nEndpoint = 10.0.0.20:51820
+note right of PA : wg show: peer + pubkey de PB visible
+note left of PB : wg show: peer + pubkey de PA visible
+
+== test_ping_por_tunel ==
+PA -> PB : ping -I wg0 10.99.0.3
+PB --> PA : pong
+PB -> PA : ping -I wg0 10.99.0.2
+PA --> PB : pong
+
+== test_handshake_reciente ==
+PA -> PB : ping -c 1 (trigger handshake)
+note over PA : wg show wg0 latest-handshakes\n→ PB pubkey con timestamp > 0\n→ timestamp reciente (< 5 seg)
+
+@enduml

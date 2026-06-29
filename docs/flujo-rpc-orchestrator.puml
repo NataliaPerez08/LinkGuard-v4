@@ -1,0 +1,40 @@
+@startuml flujo-rpc-orchestrator
+title Flujo de un RPC dentro del Orchestrator
+
+participant "Cliente\n(orch-cli / peer / hub-agent)" as C
+participant "XML-RPC Server\n/ RPC2" as Server
+participant "_xml_<cmd>\nwrapper" as W
+participant "_safe_call" as Safe
+participant "auth" as Auth
+participant "endpoints_*.rpc_*" as Biz
+participant "state.STATE" as State
+participant "hub_client" as Hub
+
+C -> Server : POST /RPC2\n(peer.heartbeat, peer.register, etc.)
+Server -> W : dispatch por nombre
+W -> W : parse args posicionales
+W -> Safe : _safe_call(handler, params)
+
+Safe -> Auth : orch_check_admin_token()\no _auth_from_token(jwt)
+Auth --> Safe : ok / PermissionError
+
+Safe -> Biz : rpc_<action>(params)
+Biz -> State : LOCK_PEERS / LOCK_NETWORKS
+Biz -> State : mutate STATE[peers|networks|users]
+Biz -> State : state.persist() → state.json
+Biz -> State : state.add_event()
+
+Biz -> Hub : _hub_apply_peer_allowed_ips(peer_id)
+Hub --> Biz : ok / retry
+Biz --> Safe : response dict
+
+Safe --> Server : return dict\n(o Fault 400/403/404/503)
+Server --> C : XML-RPC response
+
+note over State
+  Locks granulares:
+  LOCK_USERS → LOCK_NETWORKS → LOCK_PEERS → LOCK_EVENTS
+  (orden estricto, nunca invertir)
+end note
+
+@enduml

@@ -1,0 +1,402 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{listings}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{colortbl}
+
+\geometry{margin=1.2cm}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  showstringspaces=false,
+  frame=single,
+  backgroundcolor=\color{gray!5}
+}
+
+\definecolor{okgreen}{RGB}{63,185,80}
+\definecolor{warnyellow}{RGB}{210,153,34}
+\definecolor{failred}{RGB}{248,81,73}
+\definecolor{headerblue}{RGB}{121,192,255}
+\definecolor{tagblue}{RGB}{88,166,255}
+\definecolor{taggreen}{RGB}{63,185,80}
+\definecolor{tagpurple}{RGB}{210,168,255}
+
+\newcommand{\ok}[1]{\textcolor{okgreen}{\textbf{#1}}}
+\newcommand{\warn}[1]{\textcolor{warnyellow}{\textbf{#1}}}
+\newcommand{\fail}[1]{\textcolor{failred}{\textbf{#1}}}
+\newcommand{\partialcmd}[1]{\textcolor{warnyellow}{\textbf{#1}}}
+
+\title{Reporte Hub-Mesh AWS Multiusuario CLI — LinkGuard v4 (AWS + VM + RPi5 + 1 QEMU)}
+\author{LinkGuard v2}
+\date{2026-06-25 17:44:46 CST}
+
+\begin{document}
+\maketitle
+
+\section{Inventario de peers}
+\begin{longtable}{|c|c|c|c|c|}
+\hline
+Peer & IP tunel & Endpoint & NAT & Tipo \\ \hline
+119 aws (54.210.49.136) & 10.20.30.2 & 54.210.49.136:51820 & symmetric & NUBE \\ \hline
+40 vm (172.20.0.40) & 10.20.30.5 & 187.168.147.15:33960 & symmetric & VM \\ \hline
+7 rpi5 (172.20.0.7) & 10.20.30.6 & 187.168.147.15:42674 & symmetric & RPi5 \\ \hline
+143 aws (98.87.229.24) & 10.20.30.4 & 98.87.229.24:51820 & symmetric & NUBE \\ \hline
+76 aws (3.228.113.66) & 10.20.30.3 & 3.228.113.66:51820 & symmetric & NUBE \\ \hline
+peer01 (QEMU) & 10.20.30.7 & 110.238.90.23:3779 & symmetric & QEMU \\ \hline
+\end{longtable}
+
+Hub:  \texttt{34.193.139.170:51820} 34.193.139.170:51820  — IP tunel:  \texttt{10.20.30.1} 10.20.30.1  | SSH nubes: llave  \texttt{linkguard-key.pem} linkguard-key.pem  | VM/RPi5 via jump  \texttt{root@100.115.215.49} root@100.115.215.49\\
+
+\section{Topologia:hub-mesh}
+Ping OK: 22/30 — TTLs: TTL=63 (relay 1 hop), TTL=126 (relay -62 hops)\\
+
+\subsection{Matriz de conectividad}
+\begin{longtable}{|c|c|c|c|c|c|c|}
+\hline
+Origen \textbackslash{} Destino & 119 aws (54.210.49.136)10.20.30.2 & 40 vm (172.20.0.40)10.20.30.5 & 7 rpi5 (172.20.0.7)10.20.30.6 & 143 aws (98.87.229.24)10.20.30.4 & 76 aws (3.228.113.66)10.20.30.3 & peer01 (QEMU)10.20.30.7 \\ \hline
+119 aws (54.210.49.136)10.20.30.2 & -- & ✗ FALLO-- & ⚠ LENTO134.6 ms & OK1.2 ms & OK1.2 ms & ⚠ LENTO125.9 ms \\ \hline
+40 vm (172.20.0.40)10.20.30.5 & ⚠ LENTO88.0 ms & -- & ⚠ PARCIAL-- & ⚠ LENTO89.3 ms & ⚠ LENTO87.0 ms & ⚠ LENTO209.3 ms \\ \hline
+7 rpi5 (172.20.0.7)10.20.30.6 & ⚠ LENTO94.1 ms & ✗ FALLO-- & -- & ⚠ LENTO93.3 ms & ⚠ LENTO95.6 ms & ⚠ LENTO169.0 ms \\ \hline
+143 aws (98.87.229.24)10.20.30.4 & OK1.2 ms & ⚠ LENTO240.9 ms & ⚠ PARCIAL-- & -- & OK1.3 ms & ⚠ LENTO108.6 ms \\ \hline
+76 aws (3.228.113.66)10.20.30.3 & OK1.2 ms & ✗ FALLO-- & ⚠ PARCIAL-- & OK1.2 ms & -- & ⚠ LENTO108.7 ms \\ \hline
+peer01 (QEMU)10.20.30.7 & ⚠ LENTO72.4 ms & ✗ FALLO-- & ✗ FALLO-- & ⚠ LENTO121.2 ms & ⚠ LENTO81.4 ms & -- \\ \hline
+\end{longtable}
+
+\subsection{Detalle por par}
+\begin{longtable}{|c|c|c|c|c|c|c|}
+\hline
+Origen & Destino & Tipo & RTT (ms) & Perdida & TTL & Estado \\ \hline
+119 aws (54.210.49.136)10.20.30.2 & 40 vm (172.20.0.40)10.20.30.5 & Relay via hub & 93.4 & 80\textbackslash{}% & 63 & ✗ FALLO \\ \hline
+119 aws (54.210.49.136)10.20.30.2 & 7 rpi5 (172.20.0.7)10.20.30.6 & Relay via hub & 134.6 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+119 aws (54.210.49.136)10.20.30.2 & 143 aws (98.87.229.24)10.20.30.4 & P2P & 1.2 & 0\textbackslash{}% & 63 & OK \\ \hline
+119 aws (54.210.49.136)10.20.30.2 & 76 aws (3.228.113.66)10.20.30.3 & P2P & 1.2 & 0\textbackslash{}% & 126 & OK \\ \hline
+119 aws (54.210.49.136)10.20.30.2 & peer01 (QEMU)10.20.30.7 & Relay via hub & 125.9 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+40 vm (172.20.0.40)10.20.30.5 & 119 aws (54.210.49.136)10.20.30.2 & Relay via hub & 88.0 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+40 vm (172.20.0.40)10.20.30.5 & 7 rpi5 (172.20.0.7)10.20.30.6 & Relay via hub & 178.5 & 60\textbackslash{}% & 63 & ⚠ PARCIAL \\ \hline
+40 vm (172.20.0.40)10.20.30.5 & 143 aws (98.87.229.24)10.20.30.4 & Relay via hub & 89.3 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+40 vm (172.20.0.40)10.20.30.5 & 76 aws (3.228.113.66)10.20.30.3 & Relay via hub & 87.0 & 0\textbackslash{}% & 126 & ⚠ LENTO \\ \hline
+40 vm (172.20.0.40)10.20.30.5 & peer01 (QEMU)10.20.30.7 & Relay via hub & 209.3 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+7 rpi5 (172.20.0.7)10.20.30.6 & 119 aws (54.210.49.136)10.20.30.2 & Relay via hub & 94.1 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+7 rpi5 (172.20.0.7)10.20.30.6 & 40 vm (172.20.0.40)10.20.30.5 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+7 rpi5 (172.20.0.7)10.20.30.6 & 143 aws (98.87.229.24)10.20.30.4 & Relay via hub & 93.3 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+7 rpi5 (172.20.0.7)10.20.30.6 & 76 aws (3.228.113.66)10.20.30.3 & Relay via hub & 95.6 & 0\textbackslash{}% & 126 & ⚠ LENTO \\ \hline
+7 rpi5 (172.20.0.7)10.20.30.6 & peer01 (QEMU)10.20.30.7 & Relay via hub & 169.0 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+143 aws (98.87.229.24)10.20.30.4 & 119 aws (54.210.49.136)10.20.30.2 & P2P & 1.2 & 0\textbackslash{}% & 63 & OK \\ \hline
+143 aws (98.87.229.24)10.20.30.4 & 40 vm (172.20.0.40)10.20.30.5 & Relay via hub & 240.9 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+143 aws (98.87.229.24)10.20.30.4 & 7 rpi5 (172.20.0.7)10.20.30.6 & Relay via hub & 114.7 & 20\textbackslash{}% & 63 & ⚠ PARCIAL \\ \hline
+143 aws (98.87.229.24)10.20.30.4 & 76 aws (3.228.113.66)10.20.30.3 & P2P & 1.3 & 0\textbackslash{}% & 126 & OK \\ \hline
+143 aws (98.87.229.24)10.20.30.4 & peer01 (QEMU)10.20.30.7 & Relay via hub & 108.6 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+76 aws (3.228.113.66)10.20.30.3 & 119 aws (54.210.49.136)10.20.30.2 & P2P & 1.2 & 0\textbackslash{}% & 63 & OK \\ \hline
+76 aws (3.228.113.66)10.20.30.3 & 40 vm (172.20.0.40)10.20.30.5 & Relay via hub & 218.7 & 80\textbackslash{}% & 63 & ✗ FALLO \\ \hline
+76 aws (3.228.113.66)10.20.30.3 & 7 rpi5 (172.20.0.7)10.20.30.6 & Relay via hub & 91.1 & 40\textbackslash{}% & 63 & ⚠ PARCIAL \\ \hline
+76 aws (3.228.113.66)10.20.30.3 & 143 aws (98.87.229.24)10.20.30.4 & P2P & 1.2 & 0\textbackslash{}% & 63 & OK \\ \hline
+76 aws (3.228.113.66)10.20.30.3 & peer01 (QEMU)10.20.30.7 & Relay via hub & 108.7 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+peer01 (QEMU)10.20.30.7 & 119 aws (54.210.49.136)10.20.30.2 & Relay via hub & 72.4 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+peer01 (QEMU)10.20.30.7 & 40 vm (172.20.0.40)10.20.30.5 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+peer01 (QEMU)10.20.30.7 & 7 rpi5 (172.20.0.7)10.20.30.6 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+peer01 (QEMU)10.20.30.7 & 143 aws (98.87.229.24)10.20.30.4 & Relay via hub & 121.2 & 0\textbackslash{}% & 63 & ⚠ LENTO \\ \hline
+peer01 (QEMU)10.20.30.7 & 76 aws (3.228.113.66)10.20.30.3 & Relay via hub & 81.4 & 0\textbackslash{}% & 126 & ⚠ LENTO \\ \hline
+\end{longtable}
+
+\subsection{Throughput}
+\begin{longtable}{|c|c|c|c|c|}
+\hline
+Tipo & Cliente & Velocidad & Tamanio & Estado \\ \hline
+NUBE & peer-34-207-174-76 & 1187.10 Mbps & 8 MB & OK \\ \hline
+NUBE & peer-184-72-71-143 & 1458.89 Mbps & 8 MB & OK \\ \hline
+\end{longtable}
+
+\subsection{Configuracion WireGuard capturada}
+\subsubsection*{Orquestador (wg-HUB)}
+\begin{lstlisting}
+interface: wg-HUB
+  public key: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  private key: (hidden)
+  listening port: 51820
+
+peer: GaLY4pbMP1fEKVyzk81zUVlZwjuUbgavich/0G8/mDQ=
+  endpoint: 110.238.90.23:3779
+  allowed ips: 10.20.30.7/32
+  latest handshake: 11 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: YIwkxNeKTf+fjd1veKW0lpMpL5LYZhW2qhMxZPfsNxM=
+  endpoint: 187.168.147.15:42674
+  allowed ips: 10.20.30.6/32
+  latest handshake: 13 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: YmKxf6oNO4i/9zVihL2edy/K0CNkSjqvBB8/+GoAnn8=
+  endpoint: 187.168.147.15:33960
+  allowed ips: 10.20.30.5/32
+  latest handshake: 15 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: BtYWCaCAbd7k75Hw9y32W6EQjGbo+kJJA9Ei/7taxF0=
+  endpoint: 98.87.229.24:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 17 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: LYtJxWIxO4hJHgx6DEUqBUuGwBWM5nui2eqfpqkk2io=
+  endpoint: 3.228.113.66:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 19 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: VRScz6jorx5P3BS8Cg5Tu8QSOagreDGqCEDXAvq6rWk=
+  endpoint: 54.210.49.136:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 22 seconds ago
+  transfer: 180 B received, 92 B sent
+
+\end{lstlisting}
+
+\subsubsection*{Orquestador config (wg-HUB)}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = sI0982HQIljPq8jyswqCzckmzfYbtv0GQlgmPxwtsFs=
+
+[Peer]
+PublicKey = VRScz6jorx5P3BS8Cg5Tu8QSOagreDGqCEDXAvq6rWk=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 54.210.49.136:51820
+
+[Peer]
+PublicKey = LYtJxWIxO4hJHgx6DEUqBUuGwBWM5nui2eqfpqkk2io=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 3.228.113.66:51820
+
+[Peer]
+PublicKey = BtYWCaCAbd7k75Hw9y32W6EQjGbo+kJJA9Ei/7taxF0=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 98.87.229.24:51820
+
+[Peer]
+PublicKey = YmKxf6oNO4i/9zVihL2edy/K0CNkSjqvBB8/+GoAnn8=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 187.168.147.15:33960
+
+[Peer]
+PublicKey = YIwkxNeKTf+fjd1veKW0lpMpL5LYZhW2qhMxZPfsNxM=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 187.168.147.15:42674
+
+[Peer]
+PublicKey = GaLY4pbMP1fEKVyzk81zUVlZwjuUbgavich/0G8/mDQ=
+AllowedIPs = 10.20.30.7/32
+Endpoint = 110.238.90.23:3779
+
+\end{lstlisting}
+
+\subsubsection*{119 aws (54.210.49.136) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: VRScz6jorx5P3BS8Cg5Tu8QSOagreDGqCEDXAvq6rWk=
+  private key: (hidden)
+  listening port: 51820
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 25 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{119 aws (54.210.49.136) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = qFOGF6bzOGA0Ijh/YwwF3jDSMxNBeljxr2r0B9BkwFk=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{76 aws (3.228.113.66) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: LYtJxWIxO4hJHgx6DEUqBUuGwBWM5nui2eqfpqkk2io=
+  private key: (hidden)
+  listening port: 51820
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 25 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{76 aws (3.228.113.66) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = gCTS7t15dlzpFC1CdLfHJRK0bOt3dEBcclEArC3c/HU=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{143 aws (98.87.229.24) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: BtYWCaCAbd7k75Hw9y32W6EQjGbo+kJJA9Ei/7taxF0=
+  private key: (hidden)
+  listening port: 51820
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 26 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{143 aws (98.87.229.24) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = 2D/AUDPteFsWRHXlGjasOA31/eE4e7+p2Il/OMwKu38=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{40 vm (172.20.0.40) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: YmKxf6oNO4i/9zVihL2edy/K0CNkSjqvBB8/+GoAnn8=
+  private key: (hidden)
+  listening port: 58894
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 25 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{40 vm (172.20.0.40) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 50625
+PrivateKey = aKhBR/7jBTEZS2UFMyY7OFw6O8OUatyD17z/kmqZkXY=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{7 rpi5 (172.20.0.7) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: YIwkxNeKTf+fjd1veKW0lpMpL5LYZhW2qhMxZPfsNxM=
+  private key: (hidden)
+  listening port: 39569
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 25 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{7 rpi5 (172.20.0.7) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 39569
+PrivateKey = uM4dKPceb9Ha0qwvQVU3hpnmL7KFc80eDa3TtKD1tEY=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{peer01 (QEMU) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: GaLY4pbMP1fEKVyzk81zUVlZwjuUbgavich/0G8/mDQ=
+  private key: (hidden)
+  listening port: 51820
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 24 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{peer01 (QEMU) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = OAAB4n0ENVJ2AaQg5ph4N1048rfpnLs31j+GGuhRRFU=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\section{Resumen por topologia}
+\begin{longtable}{|c|c|c|c|c|c|}
+\hline
+Topologia & Ping OK & RTT minimo & RTT promedio & RTT maximo & Throughput \\ \hline
+hub-mesh & 22/30 & 1.2 & 87.6 & 240.9 & nube: 1323.0 Mbps \\ \hline
+\end{longtable}
+
+\section{Modo de autenticacion CLI Multiusuario}
+\begin{longtable}{|c|c|c|}
+\hline
+Operacion & Usuario & Auth \\ \hline
+network.* (create/delete/topology) & admin & --admin-token \\ \hline
+peer.list (todos los peers) & admin & --admin-token \\ \hline
+peer.unregister & tenant-a & --token(JWT) \\ \hline
+SSH nubes AWS & ubuntu / ec2-user & llavelinkguard-key.pem \\ \hline
+SSH orquestador & admin & llave +sudo \\ \hline
+SSH VM/RPi5 & root / natalia & password via jumproot@100.115.215.49 \\ \hline
+SSH QEMU & root & passwordlinkguard-test \\ \hline
+\end{longtable}
+
+Usuario tenant:  \texttt{tenant-a} tenant-a  | JWT via  \texttt{auth-login} auth-login\\
+
+
+\end{document}

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# LinkGuard Orchestrator + Hub Agent + orch-cli installer - releasev4
-# Based on ChatGPT v3 structure; corrected paths/files for releasev4
+# LinkGuard Orchestrator, Hub Agent, orch-cli installer 
 set -euo pipefail
 
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then

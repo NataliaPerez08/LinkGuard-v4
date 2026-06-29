@@ -1,0 +1,58 @@
+@startuml estados-peer-orchestrator
+title Estados de un Peer (vista del Orchestrator)
+
+skinparam state {
+    BackgroundColor<<start>> #LightGreen
+    BackgroundColor<<stop>> #LightCoral
+    BackgroundColor<<warn>> #LightYellow
+}
+
+state "Creado" as Creado <<start>>
+state "Activo" as Activo
+state "Vivo" as Vivo
+state "Stale\n(ts > 180s)" as Stale <<warn>>
+state "Deshabilitado" as Deshabilitado
+state "Rotado" as Rotado
+state "Eliminado" as Eliminado <<stop>>
+
+[*] --> Creado : rpc_peer_create\n(auto_approve / admin)
+
+Creado --> Activo : peer.register\n(re-entry con nueva key)
+
+Activo --> Vivo : last_heartbeat\ndentro HEARTBEAT_TTL_SEC (180s)
+
+Vivo --> Vivo : peer.heartbeat\nactualiza ts + endpoint
+
+Vivo --> Stale : ts > 180s\nsin heartbeat
+
+Stale --> Vivo : heartbeat llega tarde
+
+Stale --> Eliminado : nunca vuelve\n(admin cleanup)
+
+Activo --> Deshabilitado : rpc_peer_disable
+
+Deshabilitado --> Activo : rpc_peer_enable
+
+Vivo --> Rotado : rpc_peer_rotate_key\n(nueva pub_key)
+
+Rotado --> Vivo : config_version bumped\npeers reaplican
+
+Activo --> Eliminado : rpc_peer_delete\nrpc_peer_unregister
+
+Eliminado --> [*]
+
+note right of Vivo
+  **heartbeat** actualiza:
+  - last_heartbeat
+  - endpoint (con remote_addr override)
+  - nat_type
+  - status (wg show)
+end note
+
+note right of Stale
+  Peer marcado como "no alive"
+  en mesh_peers / hub_mesh_peers
+  (alive=False)
+end note
+
+@enduml

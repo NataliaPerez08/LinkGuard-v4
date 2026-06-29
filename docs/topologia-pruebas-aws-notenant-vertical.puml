@@ -1,0 +1,92 @@
+@startuml topologia-pruebas-aws-notenant-vertical
+title Topología de Pruebas LinkGuard — AWS (sin tenants, admin-only)
+
+skinparam backgroundColor #FEFEFE
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam ArrowColor #34495E
+skinparam nodesep 20
+skinparam ranksep 18
+skinparam noteFontSize 9
+
+' ============================================================
+' ADMIN (único operador)
+' ============================================================
+
+rectangle "admin (operador global) — ADMIN_TOKEN único" as admin_tenant #FFF9C4
+
+' ============================================================
+' ORCHESTRATOR (AWS) — nodo único compacto
+' ============================================================
+
+node "Orchestrator + HUB\n34.193.139.170 (AWS us-east-1)\nOrch :8000 XML-RPC | Hub :9000 wg-HUB :51820\nstate.json · secrets · jwt_secret" as Orch #E3F2FD
+
+' ============================================================
+' CLOUD PEERS (EC2) — columna única (admin = amarillo)
+' ============================================================
+
+node "EC2 Ubuntu — 54.210.49.136 — wg0: .2 — peer-100-31-255-119" as PeerUbuntu #FFF9C4
+node "EC2 Amazon Linux — 3.228.113.66 — wg0: .3 — peer-34-207-174-76" as PeerAmazon #FFF9C4
+node "EC2 AlmaLinux — 98.87.229.24 — wg0: .4 — peer-184-72-71-143" as PeerAlma #FFF9C4
+
+' ============================================================
+' TERMINAL PEERS — columna única
+' ============================================================
+
+node "Jump Host — 100.115.215.49 — root / password" as Jump #FFE0B2
+node "VM40 Alpine — 172.20.0.40 — wg0: .5 — peer-172-20-0-40 (openrc)" as PeerVM40 #FFF9C4
+node "RPi5 RPi OS — 172.20.0.7 — wg0: .6 — peer-172-20-0-7 (systemd)" as PeerRPi5 #FFF9C4
+
+' ============================================================
+' QEMU TESTBED — columna única
+' ============================================================
+
+node "orq Alpine — 192.168.100.10 — peer01 — wg0: .7 (openrc)" as QEMUorq #FFF9C4
+node "pa Alpine — 192.168.100.20 — peer02 — wg0: .8 (openrc)" as QEMUpa #FFF9C4
+node "pb Alpine — 192.168.100.30 — peer03 — wg0: .9 (openrc)" as QEMUpb #FFF9C4
+
+' ============================================================
+' WIREGUARD OVERLAY
+' ============================================================
+
+rectangle "WireGuard Overlay 10.20.30.0/24 | Hub .1 | 8 peers .2-.9 (sin distinción lógica)" as wg_overlay #BBDEFB
+
+' ============================================================
+' RELACIONES — Cadena vertical (control plane)
+' ============================================================
+
+admin_tenant -down-> Orch : ADMIN_TOKEN (sin USER_ID)
+
+Orch -down-> PeerUbuntu : register / heartbeat (XML-RPC)
+PeerUbuntu -[hidden]down-> PeerAmazon
+PeerAmazon -[hidden]down-> PeerAlma
+
+PeerAlma -[hidden]down-> Jump
+Jump -[hidden]down-> PeerVM40
+PeerVM40 -[hidden]down-> PeerRPi5
+
+PeerRPi5 -[hidden]down-> QEMUorq
+QEMUorq -[hidden]down-> QEMUpa
+QEMUpa -[hidden]down-> QEMUpb
+
+QEMUpb -[hidden]down-> wg_overlay
+
+' ============================================================
+' RELACIONES — Data Plane (representativa por grupo)
+' ============================================================
+
+PeerUbuntu -down-> Orch : wg-HUB (EC2)
+PeerVM40 -down-> Orch : wg-HUB NAT (terminal)
+QEMUorq -down-> Orch : wg-HUB NAT (QEMU)
+
+' ============================================================
+' LEYENDA al pie (compacta)
+' ============================================================
+
+note bottom of wg_overlay
+  **Orchestrator admin-only**: un operador · sin _enforce_tenant · AUTH_TOKEN=ADMIN_TOKEN · sin USER_ID
+  **Sin aislamiento**: 8 peers sin user_id (amarillo) · peer.get libre · misma red 10.20.30.0/24
+  **Caso de uso**: CI/CD con token admin único · pruebas de topología puras sin validar auth entre usuarios
+end note
+
+@enduml

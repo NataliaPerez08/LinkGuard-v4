@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reporte Mesh CLI Multiusuario — LinkGuard v2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+         background: #0d1117; color: #c9d1d9; padding: 20px; }
+  h1 { color: #58a6ff; font-size: 1.8em; margin-bottom: 5px; }
+  h2 { color: #79c0ff; font-size: 1.4em; margin: 25px 0 15px; border-bottom: 1px solid #21262d; padding-bottom: 8px; }
+  h3 { color: #a5d6ff; font-size: 1.1em; margin: 15px 0 10px; }
+  h4 { color: #8b949e; font-size: 0.9em; margin: 10px 0 5px; }
+  pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 0.75em; overflow-x: auto; margin: 5px 0 15px; white-space: pre-wrap; }
+  code { background: #21262d; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 20px; font-size: 0.85em; }
+  th, td { border: 1px solid #30363d; padding: 6px 10px; text-align: center; }
+  th { background: #161b22; font-weight: 600; color: #79c0ff; }
+  td { background: #0d1117; }
+  .ok { color: #3fb950; font-weight: bold; }
+  .warn { color: #d29922; font-weight: bold; }
+  .fail { color: #f85149; font-weight: bold; }
+  .partial { color: #d29922; font-weight: bold; }
+  .tag-nube { background: #1f6feb33; color: #58a6ff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-local { background: #f0883e33; color: #f0883e; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-vm { background: #6e40c933; color: #d2a8ff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .nav { background: #161b22; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; }
+  .nav a { color: #58a6ff; text-decoration: none; margin-right: 15px; }
+  .nav a:hover { text-decoration: underline; }
+  .section { background: #161b22; border-radius: 8px; padding: 16px; margin-bottom: 20px; border: 1px solid #30363d; }
+  .summary-ok { color: #3fb950; }
+  .summary-fail { color: #f85149; }
+  .summary-partial { color: #d29922; }
+  .legend { color: #8b949e; margin-top: 10px; font-size: 0.8em; }
+</style>
+</head>
+<body>
+<h1>Reporte Mesh CLI Multiusuario — LinkGuard v2</h1>
+<p>Generado: <code>2026-06-18 17:24:19 CST</code> | Orquestador: <code>101.44.24.91</code></p>
+<p>Peers: 4 nube/vm + 1 local (total 5)</p>
+
+<div class="section" id="inventario"><h2>Inventario de peers</h2><table><tr><th>Peer</th><th>IP tunel</th><th>Endpoint</th><th>NAT</th><th>Tipo</th></tr>
+<tr><td>parrot (local)</td><td><code>10.20.30.5</code></td><td><code>11.248.13.187:34280</code></td><td>symmetric</td><td><span class="tag-local">LOCAL</span></td></tr>
+<tr><td>57 nube (122.8.179.57)</td><td><code>10.20.30.3</code></td><td><code>122.8.179.57:51820</code></td><td>symmetric</td><td><span class="tag-nube">NUBE</span></td></tr>
+<tr><td>40 vm (172.20.0.40)</td><td><code>10.20.30.6</code></td><td><code>172.20.0.40:0</code></td><td></td><td><span class="tag-vm">VM</span></td></tr>
+<tr><td>141 nube (46.250.162.141)</td><td><code>10.20.30.4</code></td><td><code>46.250.162.141:51820</code></td><td>symmetric</td><td><span class="tag-nube">NUBE</span></td></tr>
+<tr><td>185 nube (46.250.168.185)</td><td><code>10.20.30.2</code></td><td><code>46.250.168.185:51820</code></td><td>symmetric</td><td><span class="tag-nube">NUBE</span></td></tr>
+</table><p class="legend">Hub: <code>101.44.24.91:51820</code> — IP tunel: <code>10.20.30.1</code></p></div>
+<div class="section" id="topo-mesh">
+<h2>Topologia: <code>mesh</code></h2>
+<p class="summary-partial">Ping OK: 15/20 — TTLs: TTL=64 (directo)</p>
+<h3>Matriz de conectividad</h3><table><tr><th>Origen \ Destino</th>
+<th>parrot (local)<br><small><code>10.20.30.5</code></small></th>
+<th>57 nube (122.8.179.57)<br><small><code>10.20.30.3</code></small></th>
+<th>40 vm (172.20.0.40)<br><small><code>10.20.30.6</code></small></th>
+<th>141 nube (46.250.162.141)<br><small><code>10.20.30.4</code></small></th>
+<th>185 nube (46.250.168.185)<br><small><code>10.20.30.2</code></small></th>
+</tr>
+<tr><td><b>parrot (local)</b><br><small><code>10.20.30.5</code></small></td>
+<td>—</td>
+<td class="ok"><span class="ok">OK</span><br><small>14.0 ms</small></td>
+<td class="fail"><span class="fail">✗ FALLO</span><br><small>—</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>24.8 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>76.5 ms</small></td>
+</tr>
+<tr><td><b>57 nube (122.8.179.57)</b><br><small><code>10.20.30.3</code></small></td>
+<td class="ok"><span class="ok">OK</span><br><small>43.1 ms</small></td>
+<td>—</td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>714.2 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>1.5 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>2.3 ms</small></td>
+</tr>
+<tr><td><b>40 vm (172.20.0.40)</b><br><small><code>10.20.30.6</code></small></td>
+<td class="fail"><span class="fail">✗ FALLO</span><br><small>—</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>984.3 ms</small></td>
+<td>—</td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>809.3 ms</small></td>
+</tr>
+<tr><td><b>141 nube (46.250.162.141)</b><br><small><code>10.20.30.4</code></small></td>
+<td class="ok"><span class="ok">OK</span><br><small>43.0 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>1.5 ms</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td>—</td>
+<td class="ok"><span class="ok">OK</span><br><small>1.4 ms</small></td>
+</tr>
+<tr><td><b>185 nube (46.250.168.185)</b><br><small><code>10.20.30.2</code></small></td>
+<td class="ok"><span class="ok">OK</span><br><small>44.6 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>2.4 ms</small></td>
+<td class="partial"><span class="partial">⚠ PARCIAL</span><br><small>—</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>1.4 ms</small></td>
+<td>—</td>
+</tr>
+</table>
+<h3>Detalle por par</h3><table><tr><th>Origen</th><th>Destino</th><th>Tipo</th><th>RTT (ms)</th><th>Perdida</th><th>TTL</th><th>Estado</th></tr>
+<tr><td>parrot (local)<br><small><code>10.20.30.5</code></small></td><td>57 nube (122.8.179.57)<br><small><code>10.20.30.3</code></small></td><td>Relay via hub</td><td>14.0</td><td>0%</td><td>64</td><td><span class="ok">OK</span></td></tr>
+<tr><td>parrot (local)<br><small><code>10.20.30.5</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>—</td><td>100%</td><td>—</td><td><span class="fail">✗ FALLO</span></td></tr>
+<tr><td>parrot (local)<br><small><code>10.20.30.5</code></small></td><td>141 nube (46.250.162.141)<br><small><code>10.20.30.4</code></small></td><td>Relay via hub</td><td>24.8</td><td>0%</td><td>64</td><td><span class="ok">OK</span></td></tr>
+<tr><td>parrot (local)<br><small><code>10.20.30.5</code></small></td><td>185 nube (46.250.168.185)<br><small><code>10.20.30.2</code></small></td><td>Relay via hub</td><td>76.5</td><td>0%</td><td>64</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>57 nube (122.8.179.57)<br><small><code>10.20.30.3</code></small></td><td>parrot (local)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>43.1</td><td>0%</td><td>64</td><td><span class="ok">OK</span></td></tr>
+<tr><td>57 nube (122.8.179.57)<br><small><code>10.20.30.3</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>714.2</td><td>0%</td><td>64</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>57 nube (122.8.179.57)<br><small><code>10.20.30.3</code></small></td><td>141 nube (46.250.162.141)<br><small><code>10.20.30.4</code></small></td><td>P2P</td><td>1.5</td><td>0%</td><td>64</td><td><span class="ok">OK</span></td></tr>
+<tr><td>57 nube (122.8.179.57)<br><small><code>10.20.30.3</code></small></td><td>185 nube (46.250.168.185)<br><small><code>10.20.30.2</code></small></td><td>P2P</td><td>2.3</td><td>0%</td><td>64</td><td><span class="ok">OK</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.6</code></small></td><td>parrot (local)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>—</td><td>100%</td><td>—</td><td><span class="fail">✗ FALLO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.6</code></small></td><td>57 nube (122.8.179.57)<br><small><code>10.20.30.3</code></small></td><td>Relay via hub</td><td>984.3</td><td>0%</td><td>64</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.6</code></small></td><td>141 nube (46.250.162.141)<br><small><code>10.20.30.4</code></small></td><td>Relay via hub</td><td>790.0</td><td>20%</td><td>64</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.6</code></small></td><td>185 nube (46.250.168.185)<br><small><code>10.20.30.2</code></small></td><td>Relay via hub</td><td>809.3</td><td>0%</td><td>64</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>141 nube (46.250.162.141)<br><small><code>10.20.30.4</code></small></td><td>parrot (local)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>43.0</td><td>0%</td><td>64</td><td><span class="ok">OK</span></td></tr>
+<tr><td>141 nube (46.250.162.141)<br><small><code>10.20.30.4</code></small></td><td>57 nube (122.8.179.57)<br><small><code>10.20.30.3</code></small></td><td>P2P</td><td>1.5</td><td>0%</td><td>64</td><td><span class="ok">OK</span></td></tr>
+<tr><td>141 nube (46.250.162.141)<br><small><code>10.20.30.4</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>72.9</td><td>20%</td><td>64</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>141 nube (46.250.162.141)<br><small><code>10.20.30.4</code></small></td><td>185 nube (46.250.168.185)<br><small><code>10.20.30.2</code></small></td><td>P2P</td><td>1.4</td><td>0%</td><td>64</td><td><span class="ok">OK</span></td></tr>
+<tr><td>185 nube (46.250.168.185)<br><small><code>10.20.30.2</code></small></td><td>parrot (local)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>44.6</td><td>0%</td><td>64</td><td><span class="ok">OK</span></td></tr>
+<tr><td>185 nube (46.250.168.185)<br><small><code>10.20.30.2</code></small></td><td>57 nube (122.8.179.57)<br><small><code>10.20.30.3</code></small></td><td>P2P</td><td>2.4</td><td>0%</td><td>64</td><td><span class="ok">OK</span></td></tr>
+<tr><td>185 nube (46.250.168.185)<br><small><code>10.20.30.2</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>885.2</td><td>20%</td><td>64</td><td><span class="partial">⚠ PARCIAL</span></td></tr>
+<tr><td>185 nube (46.250.168.185)<br><small><code>10.20.30.2</code></small></td><td>141 nube (46.250.162.141)<br><small><code>10.20.30.4</code></small></td><td>P2P</td><td>1.4</td><td>0%</td><td>64</td><td><span class="ok">OK</span></td></tr>
+</table>
+<h3>Throughput</h3><table><tr><th>Tipo</th><th>Cliente</th><th>Velocidad</th><th>Tamanio</th><th>Estado</th></tr>
+<tr><td><span class="tag-nube">NUBE</span></td><td>peer-122-8-179-57</td><td>10.10 Mbps</td><td>0 MB</td><td><span class="ok">OK</span></td></tr>
+<tr><td><span class="tag-nube">NUBE</span></td><td>peer-46-250-162-141</td><td>7.67 Mbps</td><td>0 MB</td><td><span class="ok">OK</span></td></tr>
+</table>
+<h3>Configuracion WireGuard capturada</h3>
+<h4>Orquestador (wg-HUB)</h4>
+<pre>interface: wg-HUB
+  public key: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  private key: (hidden)
+  listening port: 51820
+
+peer: s/BaIS1NpzdIFDISB8aKB5xAhaTqU6bnUDpwMjlEjh8=
+  endpoint: 187.168.147.15:53972
+  allowed ips: 10.20.30.6/32
+  latest handshake: 10 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: c7Xw0vvIrrQFWKC9o62bGOVpYOkA9QGsg3FS0K19+HE=
+  endpoint: 11.248.13.187:12978
+  allowed ips: 10.20.30.5/32
+  latest handshake: 17 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: 3g870WSWY16MIWhiYkhvrB2duyCrtmqwlPF7Y1mX038=
+  endpoint: 46.250.162.141:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 37 seconds ago
+  transfer: 212 B received, 92 B sent
+
+peer: /Zy/IPm6S6ki+lbqshBE0SEp0RRZLfi5T9vjNtP6KmI=
+  endpoint: 122.8.179.57:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 38 seconds ago
+  transfer: 212 B received, 92 B sent
+
+peer: 0zNhMYzCTu4BK2IxSE3SFeByMNgRYoxT4zRayFx4QFU=
+  endpoint: 46.250.168.185:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 39 seconds ago
+  transfer: 212 B received, 92 B sent
+</pre>
+<h4>Orquestador config (wg-HUB)</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = QJSunAcDAPan7XuY3fcY6XIYLNlsKCLTwSzX8HqMBVw=
+
+[Peer]
+PublicKey = 0zNhMYzCTu4BK2IxSE3SFeByMNgRYoxT4zRayFx4QFU=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 46.250.168.185:51820
+
+[Peer]
+PublicKey = /Zy/IPm6S6ki+lbqshBE0SEp0RRZLfi5T9vjNtP6KmI=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 122.8.179.57:51820
+
+[Peer]
+PublicKey = 3g870WSWY16MIWhiYkhvrB2duyCrtmqwlPF7Y1mX038=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 46.250.162.141:51820
+
+[Peer]
+PublicKey = c7Xw0vvIrrQFWKC9o62bGOVpYOkA9QGsg3FS0K19+HE=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 11.248.13.187:12978
+
+[Peer]
+PublicKey = s/BaIS1NpzdIFDISB8aKB5xAhaTqU6bnUDpwMjlEjh8=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 187.168.147.15:53972
+</pre>
+<h4>185 nube (46.250.168.185) — wg show</h4>
+<pre>interface: wg0
+  public key: 0zNhMYzCTu4BK2IxSE3SFeByMNgRYoxT4zRayFx4QFU=
+  private key: (hidden)
+  listening port: 51820
+
+peer: s/BaIS1NpzdIFDISB8aKB5xAhaTqU6bnUDpwMjlEjh8=
+  endpoint: 187.168.147.15:53972
+  allowed ips: 10.20.30.6/32
+  latest handshake: 11 seconds ago
+  transfer: 180 B received, 124 B sent
+  persistent keepalive: every 25 seconds
+
+peer: c7Xw0vvIrrQFWKC9o62bGOVpYOkA9QGsg3FS0K19+HE=
+  endpoint: 110.238.90.22:2886
+  allowed ips: 10.20.30.5/32
+  latest handshake: 13 seconds ago
+  transfer: 180 B received, 272 B sent
+  persistent keepalive: every 25 seconds
+
+peer: /Zy/IPm6S6ki+lbqshBE0SEp0RRZLfi5T9vjNtP6KmI=
+  endpoint: 122.8.179.57:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 15 seconds ago
+  transfer: 124 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 3g870WSWY16MIWhiYkhvrB2duyCrtmqwlPF7Y1mX038=
+  endpoint: 46.250.162.141:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 15 seconds ago
+  transfer: 124 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 40 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>185 nube (46.250.168.185) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = 8A2EiQHyvg7ugv15NAR0olnKv8DZoxkIbhEUcPvbqE8=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = c7Xw0vvIrrQFWKC9o62bGOVpYOkA9QGsg3FS0K19+HE=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 110.238.90.22:2886
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = /Zy/IPm6S6ki+lbqshBE0SEp0RRZLfi5T9vjNtP6KmI=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 122.8.179.57:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 3g870WSWY16MIWhiYkhvrB2duyCrtmqwlPF7Y1mX038=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 46.250.162.141:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = s/BaIS1NpzdIFDISB8aKB5xAhaTqU6bnUDpwMjlEjh8=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 187.168.147.15:53972
+PersistentKeepalive = 25
+</pre>
+<h4>57 nube (122.8.179.57) — wg show</h4>
+<pre>interface: wg0
+  public key: /Zy/IPm6S6ki+lbqshBE0SEp0RRZLfi5T9vjNtP6KmI=
+  private key: (hidden)
+  listening port: 51820
+
+peer: s/BaIS1NpzdIFDISB8aKB5xAhaTqU6bnUDpwMjlEjh8=
+  endpoint: 187.168.147.15:53972
+  allowed ips: 10.20.30.6/32
+  latest handshake: 13 seconds ago
+  transfer: 180 B received, 124 B sent
+  persistent keepalive: every 25 seconds
+
+peer: c7Xw0vvIrrQFWKC9o62bGOVpYOkA9QGsg3FS0K19+HE=
+  endpoint: 110.238.90.22:28208
+  allowed ips: 10.20.30.5/32
+  latest handshake: 15 seconds ago
+  transfer: 180 B received, 272 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 3g870WSWY16MIWhiYkhvrB2duyCrtmqwlPF7Y1mX038=
+  endpoint: 46.250.162.141:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 16 seconds ago
+  transfer: 124 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 0zNhMYzCTu4BK2IxSE3SFeByMNgRYoxT4zRayFx4QFU=
+  endpoint: 46.250.168.185:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 17 seconds ago
+  transfer: 180 B received, 864 B sent
+  persistent keepalive: every 25 seconds
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 41 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>57 nube (122.8.179.57) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = ONKmRqxXzJI6HygqMqRFkAkj9YifORcl/mSP1boip1U=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 0zNhMYzCTu4BK2IxSE3SFeByMNgRYoxT4zRayFx4QFU=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 46.250.168.185:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = c7Xw0vvIrrQFWKC9o62bGOVpYOkA9QGsg3FS0K19+HE=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 110.238.90.22:28208
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 3g870WSWY16MIWhiYkhvrB2duyCrtmqwlPF7Y1mX038=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 46.250.162.141:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = s/BaIS1NpzdIFDISB8aKB5xAhaTqU6bnUDpwMjlEjh8=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 187.168.147.15:53972
+PersistentKeepalive = 25
+</pre>
+<h4>141 nube (46.250.162.141) — wg show</h4>
+<pre>interface: wg0
+  public key: 3g870WSWY16MIWhiYkhvrB2duyCrtmqwlPF7Y1mX038=
+  private key: (hidden)
+  listening port: 51820
+
+peer: s/BaIS1NpzdIFDISB8aKB5xAhaTqU6bnUDpwMjlEjh8=
+  endpoint: 187.168.147.15:53972
+  allowed ips: 10.20.30.6/32
+  latest handshake: 14 seconds ago
+  transfer: 180 B received, 124 B sent
+  persistent keepalive: every 25 seconds
+
+peer: c7Xw0vvIrrQFWKC9o62bGOVpYOkA9QGsg3FS0K19+HE=
+  endpoint: 110.238.90.22:4024
+  allowed ips: 10.20.30.5/32
+  latest handshake: 16 seconds ago
+  transfer: 180 B received, 272 B sent
+  persistent keepalive: every 25 seconds
+
+peer: /Zy/IPm6S6ki+lbqshBE0SEp0RRZLfi5T9vjNtP6KmI=
+  endpoint: 122.8.179.57:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 17 seconds ago
+  transfer: 180 B received, 864 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 0zNhMYzCTu4BK2IxSE3SFeByMNgRYoxT4zRayFx4QFU=
+  endpoint: 46.250.168.185:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 18 seconds ago
+  transfer: 180 B received, 864 B sent
+  persistent keepalive: every 25 seconds
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 41 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>141 nube (46.250.162.141) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = yGzipgKb1SdR5Tig4E5/nQEaPXZYFIGN5kw/0qal/mU=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = /Zy/IPm6S6ki+lbqshBE0SEp0RRZLfi5T9vjNtP6KmI=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 122.8.179.57:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 0zNhMYzCTu4BK2IxSE3SFeByMNgRYoxT4zRayFx4QFU=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 46.250.168.185:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = c7Xw0vvIrrQFWKC9o62bGOVpYOkA9QGsg3FS0K19+HE=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 110.238.90.22:4024
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = s/BaIS1NpzdIFDISB8aKB5xAhaTqU6bnUDpwMjlEjh8=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 187.168.147.15:53972
+PersistentKeepalive = 25
+</pre>
+<h4>40 vm (172.20.0.40) — wg show</h4>
+<pre>interface: wg0
+  public key: s/BaIS1NpzdIFDISB8aKB5xAhaTqU6bnUDpwMjlEjh8=
+  private key: (hidden)
+  listening port: 38437
+
+peer: /Zy/IPm6S6ki+lbqshBE0SEp0RRZLfi5T9vjNtP6KmI=
+  endpoint: 122.8.179.57:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 28 seconds ago
+  transfer: 124 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 3g870WSWY16MIWhiYkhvrB2duyCrtmqwlPF7Y1mX038=
+  endpoint: 46.250.162.141:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 28 seconds ago
+  transfer: 124 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 28 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 0zNhMYzCTu4BK2IxSE3SFeByMNgRYoxT4zRayFx4QFU=
+  endpoint: 46.250.168.185:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 28 seconds ago
+  transfer: 124 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+peer: c7Xw0vvIrrQFWKC9o62bGOVpYOkA9QGsg3FS0K19+HE=
+  endpoint: 11.248.13.187:38259
+  allowed ips: 10.20.30.5/32
+  transfer: 0 B received, 888 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>40 vm (172.20.0.40) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 38437
+PrivateKey = UFQtiYq3ELpRcyIxY13i/+JFXS11ZfY7QgP6d7d2D00=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = c7Xw0vvIrrQFWKC9o62bGOVpYOkA9QGsg3FS0K19+HE=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 11.248.13.187:38259
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = /Zy/IPm6S6ki+lbqshBE0SEp0RRZLfi5T9vjNtP6KmI=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 122.8.179.57:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 3g870WSWY16MIWhiYkhvrB2duyCrtmqwlPF7Y1mX038=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 46.250.162.141:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 0zNhMYzCTu4BK2IxSE3SFeByMNgRYoxT4zRayFx4QFU=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 46.250.168.185:51820
+PersistentKeepalive = 25
+</pre>
+<h4>parrot (local) — wg show</h4>
+<pre>interface: wg0
+  public key: c7Xw0vvIrrQFWKC9o62bGOVpYOkA9QGsg3FS0K19+HE=
+  private key: (hidden)
+  listening port: 47954
+
+peer: /Zy/IPm6S6ki+lbqshBE0SEp0RRZLfi5T9vjNtP6KmI=
+  endpoint: 122.8.179.57:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 42 seconds ago
+  transfer: 124 B received, 360 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 0zNhMYzCTu4BK2IxSE3SFeByMNgRYoxT4zRayFx4QFU=
+  endpoint: 46.250.168.185:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 42 seconds ago
+  transfer: 124 B received, 360 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 3g870WSWY16MIWhiYkhvrB2duyCrtmqwlPF7Y1mX038=
+  endpoint: 46.250.162.141:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 42 seconds ago
+  transfer: 124 B received, 360 B sent
+  persistent keepalive: every 25 seconds
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 47 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+peer: s/BaIS1NpzdIFDISB8aKB5xAhaTqU6bnUDpwMjlEjh8=
+  endpoint: 187.168.147.15:53972
+  allowed ips: 10.20.30.6/32
+  transfer: 0 B received, 740 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>parrot (local) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 47954
+PrivateKey = KK8pS2NOBbyYkK6JYAr02eGsea78a5PLJqNc1Hg5MkE=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = /Zy/IPm6S6ki+lbqshBE0SEp0RRZLfi5T9vjNtP6KmI=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 122.8.179.57:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 3g870WSWY16MIWhiYkhvrB2duyCrtmqwlPF7Y1mX038=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 46.250.162.141:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 0zNhMYzCTu4BK2IxSE3SFeByMNgRYoxT4zRayFx4QFU=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 46.250.168.185:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = s/BaIS1NpzdIFDISB8aKB5xAhaTqU6bnUDpwMjlEjh8=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 187.168.147.15:53972
+PersistentKeepalive = 25
+</pre>
+</div>
+<div class="section" id="resumen"><h2>Resumen por topologia</h2><table><tr><th>Topologia</th><th>Ping OK</th><th>RTT minimo</th><th>RTT promedio</th><th>RTT maximo</th><th>Throughput</th></tr>
+<tr><td><code>mesh</code></td><td><span class="summary-partial">15/20</span></td><td>1.4</td><td>184.3</td><td>984.3</td><td>nube: 8.9 Mbps</td></tr>
+</table></div>
+<div class="section" id="auth-info"><h2>Modo de autenticacion CLI</h2>
+<table><tr><th>Operacion</th><th>Usuario</th><th>Auth</th></tr>
+<tr><td>network.* (create/delete/topology)</td><td>admin</td><td><code>--admin-token</code></td></tr>
+<tr><td>peer.list (todos los peers)</td><td>admin</td><td><code>--admin-token</code></td></tr>
+<tr><td>peer.unregister</td><td>tenant-a</td><td><code>--token</code> (JWT)</td></tr>
+<tr><td>Ping / iperf3 / WG capture</td><td>—</td><td>SSH directo</td></tr>
+</table>
+<p class="legend">Usuario tenant: <code>tenant-a</code> | JWT generado via <code>auth-login</code></p>
+</div>
+<div class="section" id="diagnostico"><h2>Diagnostico de fallas</h2>
+<p><b>Resultados de esta corrida:</b></p>
+<table><tr><th>Topologia</th><th>Ping OK</th><th>Estado</th></tr>
+<tr><td><code>mesh</code></td><td>15/20</td><td class="summary-partial">⚠️</td></tr>
+</table>
+<p><b>Diagnostico por topologia:</b></p>
+<p><b>mesh:</b> 15 rutas OK, 3 con perdida parcial (&lt;80%), 2 con perdida &ge;80%.</p>
+<p>Perdida parcial en 3 pares, origen mas afectado: <code>peer-46-250-168-185</code>. Causa probable: congestion del hub como relay bajo trafico concurrente de todos los peers, o buffers de kernel WireGuard saturados por multiplexacion de handshakes.</p>
+<p><b>Terminal (172.20.0.40):</b> Esta VM esta detras de un jump-host y podria no tener conectividad directa al orquestador (101.44.24.91). Verificar ruta de red y NAT en el jump-host 100.115.215.49.</p>
+<p><b>Fallos hacia/desde parrot:</b> El peer local puede tener problemas de conectividad con algunos peers. Verificar configuracion de firewall y rutas.</p>
+<p><b>Sugerencia:</b> Verificar que todos los peers tienen conectividad bidireccional con el hub. Para peers detras de NAT, asegurar que los puertos UDP esten abiertos.</p>
+</div>
+</body></html>

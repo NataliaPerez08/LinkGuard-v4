@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reporte Hub-Spoke AWS Multiusuario CLI — LinkGuard v4 (AWS + VM + RPi5 + QEMU)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+         background: #0d1117; color: #c9d1d9; padding: 20px; }
+  h1 { color: #58a6ff; font-size: 1.8em; margin-bottom: 5px; }
+  h2 { color: #79c0ff; font-size: 1.4em; margin: 25px 0 15px; border-bottom: 1px solid #21262d; padding-bottom: 8px; }
+  h3 { color: #a5d6ff; font-size: 1.1em; margin: 15px 0 10px; }
+  h4 { color: #8b949e; font-size: 0.9em; margin: 10px 0 5px; }
+  pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 0.75em; overflow-x: auto; margin: 5px 0 15px; white-space: pre-wrap; }
+  code { background: #21262d; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 20px; font-size: 0.85em; }
+  th, td { border: 1px solid #30363d; padding: 6px 10px; text-align: center; }
+  th { background: #161b22; font-weight: 600; color: #79c0ff; }
+  td { background: #0d1117; }
+  .ok { color: #3fb950; font-weight: bold; }
+  .warn { color: #d29922; font-weight: bold; }
+  .fail { color: #f85149; font-weight: bold; }
+  .partial { color: #d29922; font-weight: bold; }
+  .tag-nube { background: #1f6feb33; color: #58a6ff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-vm { background: #6e40c933; color: #d2a8ff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-rpi { background: #da363333; color: #ff7b72; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-qemu { background: #23863633; color: #3fb950; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .nav { background: #161b22; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; }
+  .nav a { color: #58a6ff; text-decoration: none; margin-right: 15px; }
+  .nav a:hover { text-decoration: underline; }
+  .section { background: #161b22; border-radius: 8px; padding: 16px; margin-bottom: 20px; border: 1px solid #30363d; }
+  .summary-ok { color: #3fb950; }
+  .summary-fail { color: #f85149; }
+  .summary-partial { color: #d29922; }
+  .legend { color: #8b949e; margin-top: 10px; font-size: 0.8em; }
+</style>
+</head>
+<body>
+<h1>Reporte Hub-Spoke AWS Multiusuario CLI — LinkGuard v4 (AWS + VM + RPi5 + QEMU)</h1>
+<p>Generado: <code>2026-06-23 17:25:11 CST</code> | Orquestador: <code>34.193.139.170</code> (usuario <code>admin</code>)</p>
+<p>Peers: 5 reales + 3 QEMU (total 8)</p>
+
+<div class="section" id="inventario"><h2>Inventario de peers</h2><table><tr><th>Peer</th><th>IP tunel</th><th>Endpoint</th><th>NAT</th><th>Tipo</th></tr>
+<tr><td>119 aws (54.210.49.136)</td><td><code>10.20.30.2</code></td><td><code>54.210.49.136:51820</code></td><td>symmetric</td><td><span class="tag-nube">NUBE</span></td></tr>
+<tr><td>40 vm (172.20.0.40)</td><td><code>10.20.30.5</code></td><td><code>187.168.147.15:55250</code></td><td>symmetric</td><td><span class="tag-vm">VM</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)</td><td><code>10.20.30.6</code></td><td><code>187.168.147.15:56498</code></td><td>symmetric</td><td><span class="tag-rpi">RPi5</span></td></tr>
+<tr><td>143 aws (98.87.229.24)</td><td><code>10.20.30.4</code></td><td><code>98.87.229.24:51820</code></td><td>symmetric</td><td><span class="tag-nube">NUBE</span></td></tr>
+<tr><td>76 aws (3.228.113.66)</td><td><code>10.20.30.3</code></td><td><code>3.228.113.66:51820</code></td><td>symmetric</td><td><span class="tag-nube">NUBE</span></td></tr>
+<tr><td>peer01 (QEMU)</td><td><code>10.20.30.7</code></td><td><code>110.238.90.23:3768</code></td><td>symmetric</td><td><span class="tag-qemu">QEMU</span></td></tr>
+<tr><td>peer02 (QEMU)</td><td><code>10.20.30.8</code></td><td><code>110.238.90.23:3769</code></td><td>symmetric</td><td><span class="tag-qemu">QEMU</span></td></tr>
+<tr><td>peer03 (QEMU)</td><td><code>10.20.30.9</code></td><td><code>110.238.90.23:3770</code></td><td>symmetric</td><td><span class="tag-qemu">QEMU</span></td></tr>
+</table><p class="legend">Hub: <code>34.193.139.170:51820</code> — IP tunel: <code>10.20.30.1</code> | SSH nubes: llave <code>linkguard-key.pem</code> | VM/RPi5 via jump <code>root@100.115.215.49</code></p></div>
+<div class="section" id="topo-hub-spoke">
+<h2>Topologia: <code>hub-spoke</code></h2>
+<p class="summary-ok">Ping OK: 56/56 — TTLs: TTL=63 (relay 1 hop), TTL=126 (relay -62 hops)</p>
+<h3>Matriz de conectividad</h3><table><tr><th>Origen \ Destino</th>
+<th>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></th>
+<th>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></th>
+<th>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></th>
+<th>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></th>
+<th>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></th>
+<th>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></th>
+<th>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></th>
+<th>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></th>
+</tr>
+<tr><td><b>119 aws (54.210.49.136)</b><br><small><code>10.20.30.2</code></small></td>
+<td>—</td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>198.4 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>149.9 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>1.2 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>1.2 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>135.3 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>99.4 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>114.1 ms</small></td>
+</tr>
+<tr><td><b>40 vm (172.20.0.40)</b><br><small><code>10.20.30.5</code></small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>89.0 ms</small></td>
+<td>—</td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>206.8 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>88.8 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>89.0 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>259.6 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>261.0 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>305.1 ms</small></td>
+</tr>
+<tr><td><b>7 rpi5 (172.20.0.7)</b><br><small><code>10.20.30.6</code></small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>94.0 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>270.7 ms</small></td>
+<td>—</td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>93.7 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>94.8 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>196.9 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>227.4 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>249.3 ms</small></td>
+</tr>
+<tr><td><b>143 aws (98.87.229.24)</b><br><small><code>10.20.30.4</code></small></td>
+<td class="ok"><span class="ok">OK</span><br><small>7.8 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>161.4 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>92.8 ms</small></td>
+<td>—</td>
+<td class="ok"><span class="ok">OK</span><br><small>1.2 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>150.9 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>117.9 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>124.7 ms</small></td>
+</tr>
+<tr><td><b>76 aws (3.228.113.66)</b><br><small><code>10.20.30.3</code></small></td>
+<td class="ok"><span class="ok">OK</span><br><small>1.2 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>196.4 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>88.7 ms</small></td>
+<td class="ok"><span class="ok">OK</span><br><small>1.2 ms</small></td>
+<td>—</td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>111.5 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>157.6 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>182.1 ms</small></td>
+</tr>
+<tr><td><b>peer01 (QEMU)</b><br><small><code>10.20.30.7</code></small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>182.7 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>259.8 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>275.0 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>127.4 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>132.6 ms</small></td>
+<td>—</td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>237.4 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>291.1 ms</small></td>
+</tr>
+<tr><td><b>peer02 (QEMU)</b><br><small><code>10.20.30.8</code></small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>104.4 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>343.3 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>207.1 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>147.1 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>138.3 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>161.3 ms</small></td>
+<td>—</td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>279.0 ms</small></td>
+</tr>
+<tr><td><b>peer03 (QEMU)</b><br><small><code>10.20.30.9</code></small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>134.5 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>313.9 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>302.0 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>128.1 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>111.9 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>264.1 ms</small></td>
+<td class="ok"><span class="warn">⚠ LENTO</span><br><small>287.6 ms</small></td>
+<td>—</td>
+</tr>
+</table>
+<h3>Detalle por par</h3><table><tr><th>Origen</th><th>Destino</th><th>Tipo</th><th>RTT (ms)</th><th>Perdida</th><th>TTL</th><th>Estado</th></tr>
+<tr><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>198.4</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>149.9</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>Relay via hub</td><td>1.2</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>Relay via hub</td><td>1.2</td><td>0%</td><td>126</td><td><span class="ok">OK</span></td></tr>
+<tr><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>Relay via hub</td><td>135.3</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>Relay via hub</td><td>99.4</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>Relay via hub</td><td>114.1</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>Relay via hub</td><td>89.0</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>206.8</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>Relay via hub</td><td>88.8</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>Relay via hub</td><td>89.0</td><td>0%</td><td>126</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>Relay via hub</td><td>259.6</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>Relay via hub</td><td>261.0</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>Relay via hub</td><td>305.1</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>Relay via hub</td><td>94.0</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>270.7</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>Relay via hub</td><td>93.7</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>Relay via hub</td><td>94.8</td><td>0%</td><td>126</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>Relay via hub</td><td>196.9</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>Relay via hub</td><td>227.4</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>Relay via hub</td><td>249.3</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>Relay via hub</td><td>7.8</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>161.4</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>92.8</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>Relay via hub</td><td>1.2</td><td>0%</td><td>126</td><td><span class="ok">OK</span></td></tr>
+<tr><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>Relay via hub</td><td>150.9</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>Relay via hub</td><td>117.9</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>Relay via hub</td><td>124.7</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>Relay via hub</td><td>1.2</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>196.4</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>88.7</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>Relay via hub</td><td>1.2</td><td>0%</td><td>63</td><td><span class="ok">OK</span></td></tr>
+<tr><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>Relay via hub</td><td>111.5</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>Relay via hub</td><td>157.6</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>Relay via hub</td><td>182.1</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>Relay via hub</td><td>182.7</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>259.8</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>275.0</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>Relay via hub</td><td>127.4</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>Relay via hub</td><td>132.6</td><td>0%</td><td>126</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>Relay via hub</td><td>237.4</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>Relay via hub</td><td>291.1</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>Relay via hub</td><td>104.4</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>343.3</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>207.1</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>Relay via hub</td><td>147.1</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>Relay via hub</td><td>138.3</td><td>0%</td><td>126</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>Relay via hub</td><td>161.3</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>Relay via hub</td><td>279.0</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>119 aws (54.210.49.136)<br><small><code>10.20.30.2</code></small></td><td>Relay via hub</td><td>134.5</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>40 vm (172.20.0.40)<br><small><code>10.20.30.5</code></small></td><td>Relay via hub</td><td>313.9</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>7 rpi5 (172.20.0.7)<br><small><code>10.20.30.6</code></small></td><td>Relay via hub</td><td>302.0</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>143 aws (98.87.229.24)<br><small><code>10.20.30.4</code></small></td><td>Relay via hub</td><td>128.1</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>76 aws (3.228.113.66)<br><small><code>10.20.30.3</code></small></td><td>Relay via hub</td><td>111.9</td><td>0%</td><td>126</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>peer01 (QEMU)<br><small><code>10.20.30.7</code></small></td><td>Relay via hub</td><td>264.1</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+<tr><td>peer03 (QEMU)<br><small><code>10.20.30.9</code></small></td><td>peer02 (QEMU)<br><small><code>10.20.30.8</code></small></td><td>Relay via hub</td><td>287.6</td><td>0%</td><td>63</td><td><span class="warn">⚠ LENTO</span></td></tr>
+</table>
+<h3>Throughput</h3><table><tr><th>Tipo</th><th>Cliente</th><th>Velocidad</th><th>Tamanio</th><th>Estado</th></tr>
+<tr><td><span class="tag-nube">NUBE</span></td><td>peer-34-207-174-76</td><td>1060.24 Mbps</td><td>8 MB</td><td><span class="ok">OK</span></td></tr>
+<tr><td><span class="tag-nube">NUBE</span></td><td>peer-184-72-71-143</td><td>1458.89 Mbps</td><td>8 MB</td><td><span class="ok">OK</span></td></tr>
+</table>
+<h3>Configuracion WireGuard capturada</h3>
+<h4>Orquestador (wg-HUB)</h4>
+<pre>interface: wg-HUB
+  public key: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  private key: (hidden)
+  listening port: 51820
+
+peer: 16ocJdVML+wfXumJqcNLaCINTFZ4i0F+18L7OmUydmY=
+  endpoint: 110.238.90.23:3770
+  allowed ips: 10.20.30.9/32
+  latest handshake: 11 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: aEAsOe5alQrY2AFyAtMlADqQ4nDfKgkp1LdxTMI+xVs=
+  endpoint: 110.238.90.23:3769
+  allowed ips: 10.20.30.8/32
+  latest handshake: 12 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: l1yb7ay4kWHxKlkdpuAlvHxB9iV8RQR9iJWlukfvnFc=
+  endpoint: 110.238.90.23:3768
+  allowed ips: 10.20.30.7/32
+  latest handshake: 13 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: xrgk3rzph5KB7cZYwr1yQ8VtU9O1/7IabU3y8QWUDjI=
+  endpoint: 187.168.147.15:56498
+  allowed ips: 10.20.30.6/32
+  latest handshake: 16 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: TrHK9a9rCLkGP3FqfyH2FCP2AsKUZvJLwhZd/iUKoWU=
+  endpoint: 187.168.147.15:55250
+  allowed ips: 10.20.30.5/32
+  latest handshake: 18 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: y1u5BSWBpz+ODir1+mvTK3uj09SFuij2CRejj6MnlCo=
+  endpoint: 98.87.229.24:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 20 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: cG6/OvXRMGutyKwJ7Yky75XsBVm6EhuokvJVqUjGsxE=
+  endpoint: 3.228.113.66:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 23 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: sCDJQmOCI/wExSXsIdzGZDtftlrJJKnW6OaFx0O8TkM=
+  endpoint: 54.210.49.136:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 27 seconds ago
+  transfer: 212 B received, 92 B sent
+</pre>
+<h4>Orquestador config (wg-HUB)</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = sI0982HQIljPq8jyswqCzckmzfYbtv0GQlgmPxwtsFs=
+
+[Peer]
+PublicKey = sCDJQmOCI/wExSXsIdzGZDtftlrJJKnW6OaFx0O8TkM=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 54.210.49.136:51820
+
+[Peer]
+PublicKey = cG6/OvXRMGutyKwJ7Yky75XsBVm6EhuokvJVqUjGsxE=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 3.228.113.66:51820
+
+[Peer]
+PublicKey = y1u5BSWBpz+ODir1+mvTK3uj09SFuij2CRejj6MnlCo=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 98.87.229.24:51820
+
+[Peer]
+PublicKey = TrHK9a9rCLkGP3FqfyH2FCP2AsKUZvJLwhZd/iUKoWU=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 187.168.147.15:55250
+
+[Peer]
+PublicKey = xrgk3rzph5KB7cZYwr1yQ8VtU9O1/7IabU3y8QWUDjI=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 187.168.147.15:56498
+
+[Peer]
+PublicKey = l1yb7ay4kWHxKlkdpuAlvHxB9iV8RQR9iJWlukfvnFc=
+AllowedIPs = 10.20.30.7/32
+Endpoint = 110.238.90.23:3768
+
+[Peer]
+PublicKey = aEAsOe5alQrY2AFyAtMlADqQ4nDfKgkp1LdxTMI+xVs=
+AllowedIPs = 10.20.30.8/32
+Endpoint = 110.238.90.23:3769
+
+[Peer]
+PublicKey = 16ocJdVML+wfXumJqcNLaCINTFZ4i0F+18L7OmUydmY=
+AllowedIPs = 10.20.30.9/32
+Endpoint = 110.238.90.23:3770
+</pre>
+<h4>119 aws (54.210.49.136) — wg show</h4>
+<pre>interface: wg0
+  public key: sCDJQmOCI/wExSXsIdzGZDtftlrJJKnW6OaFx0O8TkM=
+  private key: (hidden)
+  listening port: 51820
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 30 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>119 aws (54.210.49.136) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = gDk/jGefk40Hm74DNRvbtRkuVKsZ2HKZkGaVnXf4910=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+<h4>76 aws (3.228.113.66) — wg show</h4>
+<pre>interface: wg0
+  public key: cG6/OvXRMGutyKwJ7Yky75XsBVm6EhuokvJVqUjGsxE=
+  private key: (hidden)
+  listening port: 51820
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 30 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>76 aws (3.228.113.66) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = IKPYHyd+er7rBXqhzxU0a/XJisKSgSNmkgthD0TdXkk=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+<h4>143 aws (98.87.229.24) — wg show</h4>
+<pre>interface: wg0
+  public key: y1u5BSWBpz+ODir1+mvTK3uj09SFuij2CRejj6MnlCo=
+  private key: (hidden)
+  listening port: 51820
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 29 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>143 aws (98.87.229.24) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = uPimLzK0BuyEbc+SDu7g3n//P0QAL7+SvBU2aej2pEY=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+<h4>40 vm (172.20.0.40) — wg show</h4>
+<pre>interface: wg0
+  public key: TrHK9a9rCLkGP3FqfyH2FCP2AsKUZvJLwhZd/iUKoWU=
+  private key: (hidden)
+  listening port: 55829
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 29 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>40 vm (172.20.0.40) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 55829
+PrivateKey = QJLuyDDq+P6XX9hR4XpwBiO7dSpNsNsL92ps/0SrSHk=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+<h4>7 rpi5 (172.20.0.7) — wg show</h4>
+<pre>interface: wg0
+  public key: xrgk3rzph5KB7cZYwr1yQ8VtU9O1/7IabU3y8QWUDjI=
+  private key: (hidden)
+  listening port: 58603
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 28 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>7 rpi5 (172.20.0.7) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 58603
+PrivateKey = QHdj/ZrRecON8+kwX49222eQ1PrABa1/RF/xlYffY0Y=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+<h4>peer01 (QEMU) — wg show</h4>
+<pre>interface: wg0
+  public key: l1yb7ay4kWHxKlkdpuAlvHxB9iV8RQR9iJWlukfvnFc=
+  private key: (hidden)
+  listening port: 51820
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 27 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>peer01 (QEMU) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = 4MXtC9XCgut1p4gHXGbftg8BLtSZ+rvXZrqVqCL4rm8=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+<h4>peer02 (QEMU) — wg show</h4>
+<pre>interface: wg0
+  public key: aEAsOe5alQrY2AFyAtMlADqQ4nDfKgkp1LdxTMI+xVs=
+  private key: (hidden)
+  listening port: 51820
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 26 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>peer02 (QEMU) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = qIqt/ldIn63SFZA/n1zq/zn6tAAV3cwD4J3804Q0V0M=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+<h4>peer03 (QEMU) — wg show</h4>
+<pre>interface: wg0
+  public key: 16ocJdVML+wfXumJqcNLaCINTFZ4i0F+18L7OmUydmY=
+  private key: (hidden)
+  listening port: 51820
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 26 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+</pre>
+<h4>peer03 (QEMU) — wg showconf</h4>
+<pre>[Interface]
+ListenPort = 51820
+PrivateKey = WApw53YPEMLiej+k7TE32+ldMcn7h6HdvAZ2MjJnGlc=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+</pre>
+</div>
+<div class="section" id="resumen"><h2>Resumen por topologia</h2><table><tr><th>Topologia</th><th>Ping OK</th><th>RTT minimo</th><th>RTT promedio</th><th>RTT maximo</th><th>Throughput</th></tr>
+<tr><td><code>hub-spoke</code></td><td><span class="summary-ok">56/56</span></td><td>1.2</td><td>161.6</td><td>343.3</td><td>nube: 1259.6 Mbps</td></tr>
+</table></div>
+<div class="section" id="auth-info"><h2>Modo de autenticacion CLI Multiusuario</h2>
+<table><tr><th>Operacion</th><th>Usuario</th><th>Auth</th></tr>
+<tr><td>network.* (create/delete/topology)</td><td>admin</td><td><code>--admin-token</code></td></tr>
+<tr><td>peer.list (todos los peers)</td><td>admin</td><td><code>--admin-token</code></td></tr>
+<tr><td>peer.unregister</td><td>tenant-a</td><td><code>--token</code> (JWT)</td></tr>
+<tr><td>SSH nubes AWS</td><td>ubuntu / ec2-user</td><td>llave <code>linkguard-key.pem</code></td></tr>
+<tr><td>SSH orquestador</td><td>admin</td><td>llave + <code>sudo</code></td></tr>
+<tr><td>SSH VM/RPi5</td><td>root / natalia</td><td>password via jump <code>root@100.115.215.49</code></td></tr>
+<tr><td>SSH QEMU</td><td>root</td><td>password <code>linkguard-test</code></td></tr>
+</table>
+<p class="legend">Usuario tenant: <code>tenant-a</code> | JWT via <code>auth-login</code></p>
+</div>
+</body></html>

@@ -1,0 +1,53 @@
+@startuml config-version-bumps
+title Eventos que disparan bump de config_version
+
+participant "Admin\n(orch-cli)" as Admin
+participant "Peer\n(wg-auto-register)" as Peer
+participant "Orchestrator" as Orch
+participant "Hub Agent" as Hub
+
+== Peer se registra por primera vez ==
+Peer -> Orch : peer.register(peer_id, pub_key, endpoint)
+Orch -> Orch : rpc_peer_create\nasigna IP, guarda peer
+Orch -> Orch : bump_config_version_locked()
+Orch -> Hub : _hub_apply_peer_allowed_ips
+Orch --> Peer : {peer_id, wg_ip, config_version}
+
+== Peer re-entry (rotación de key) ==
+Peer -> Orch : peer.register(peer_id, new_pub_key)
+Orch -> Orch : actualiza public_key\nbump_config_version_locked()
+Orch -> Hub : _hub_apply_peer_allowed_ips
+Orch --> Peer : {peer_id, wg_ip, config_version}
+
+== Admin cambia topología de red ==
+Admin -> Orch : network.set_topology(net_id, "mesh")
+Orch -> Orch : actualiza network.topology\nbump_config_version_locked()
+Orch --> Admin : {network_id, topology}
+
+== Admin rota key de peer ==
+Admin -> Orch : peer.rotate_key(peer_id, new_pub_key)
+Orch -> Orch : actualiza public_key\nbump_config_version_locked()
+Orch -> Hub : _hub_apply_peer_allowed_ips
+Orch --> Admin : {peer_id, rotated: true}
+
+== Peer hace heartbeat ==
+Peer -> Orch : peer.heartbeat(peer_id, status)
+Orch -> Orch : actualiza last_heartbeat\nendpoint, nat_type
+Orch --> Peer : {desired_config_version, mesh_peers_hash}
+
+Peer -> Peer : si desired != current:\n  apply_config()
+
+note over Orch
+  **config_version** se incrementa con:
+  - peer.register (create / re-entry)
+  - peer.rotate_key
+  - peer.update_admin
+  - peer.set_networks
+  - network.set_topology
+  - network.create (cuando asigna peer)
+  
+  Los peers comparan desired vs current
+  y reaplican wg0.conf si cambió
+end note
+
+@enduml

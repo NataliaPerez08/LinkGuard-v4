@@ -1,0 +1,103 @@
+@startuml topologia-pruebas-aws-horizontal
+title Topología de Pruebas LinkGuard — AWS + Multi-Tenant
+
+skinparam backgroundColor #FEFEFE
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam ArrowColor #34495E
+skinparam nodesep 30
+skinparam ranksep 120
+skinparam noteFontSize 9
+scale max 1100x850
+
+' ============================================================
+' TENANTS (fila superior)
+' ============================================================
+
+together {
+    rectangle "admin\n(operador global)" as admin_tenant #FFF9C4
+    rectangle "tenant-a\nUSER_ID=tenant-a" as tenant_a #E1BEE7
+}
+
+' ============================================================
+' ORCHESTRATOR (AWS) — nodo único
+' ============================================================
+
+node "Orchestrator + HUB\n34.193.139.170 (AWS us-east-1)\nOrch :8000 XML-RPC | Hub :9000 wg-HUB :51820\nstate.json · secrets · jwt_secret" as Orch #E3F2FD
+
+' ============================================================
+' CLOUD PEERS (EC2) — fila horizontal (tenant-a = lila)
+' ============================================================
+
+together {
+    node "EC2 Ubuntu\n54.210.49.136\nwg0: .2\npeer-100-31-255-119" as PeerUbuntu #E1BEE7
+    node "EC2 Amazon Linux\n3.228.113.66\nwg0: .3\npeer-34-207-174-76" as PeerAmazon #E1BEE7
+    node "EC2 AlmaLinux\n98.87.229.24\nwg0: .4\npeer-184-72-71-143" as PeerAlma #E1BEE7
+}
+
+' ============================================================
+' TERMINAL PEERS — fila horizontal
+' ============================================================
+
+together {
+    node "Jump Host\n100.115.215.49\nroot / password" as Jump #FFE0B2
+    node "VM40 Alpine\n172.20.0.40\nwg0: .5\npeer-172-20-0-40 (openrc)" as PeerVM40 #E1BEE7
+    node "RPi5 RPi OS\n172.20.0.7\nwg0: .6\npeer-172-20-0-7 (systemd)" as PeerRPi5 #E1BEE7
+}
+
+' ============================================================
+' QEMU TESTBED — fila horizontal
+' ============================================================
+
+together {
+    node "orq Alpine\n192.168.100.10\npeer01 wg0: .7 (openrc)" as QEMUorq #E1BEE7
+    node "pa Alpine\n192.168.100.20\npeer02 wg0: .8 (openrc)" as QEMUpa #E1BEE7
+    node "pb Alpine\n192.168.100.30\npeer03 wg0: .9 (openrc)" as QEMUpb #E1BEE7
+}
+
+' ============================================================
+' WIREGUARD OVERLAY
+' ============================================================
+
+rectangle "WireGuard Overlay 10.20.30.0/24 | Hub .1 | 8 peers .2-.9 | MTU 1420 | KA 25s" as wg_overlay #BBDEFB
+
+' ============================================================
+' RELACIONES — Cadena vertical entre filas (control plane)
+' ============================================================
+
+admin_tenant -down-> Orch : ADMIN_TOKEN
+tenant_a -down-> Orch : ORCH_TOKEN
+
+Orch -down-> PeerUbuntu : register / heartbeat (XML-RPC)
+PeerUbuntu -[hidden]right-> PeerAmazon
+PeerAmazon -[hidden]right-> PeerAlma
+
+PeerAlma -[hidden]down-> Jump
+Jump -[hidden]right-> PeerVM40
+PeerVM40 -[hidden]right-> PeerRPi5
+
+PeerRPi5 -[hidden]down-> QEMUorq
+QEMUorq -[hidden]right-> QEMUpa
+QEMUpa -[hidden]right-> QEMUpb
+
+QEMUpb -[hidden]down-> wg_overlay
+
+' ============================================================
+' RELACIONES — Data Plane (representativa por grupo, -up-> hacia Orch)
+' ============================================================
+
+PeerUbuntu -up-> Orch : wg-HUB (EC2)
+PeerVM40 -up-> Orch : wg-HUB NAT (terminal)
+QEMUorq -up-> Orch : wg-HUB NAT (QEMU)
+
+' ============================================================
+' LEYENDA al pie (compacta)
+' ============================================================
+
+note bottom of wg_overlay
+  **Orchestrator**: RPC :8000 · Hub WG :51820 · Red 10.20.30.0/24 · Topo: hub-spoke/mesh/hub-mesh
+  **EC2**: IP pública · SSH linkguard-key.pem · Sin NAT  |  **Terminal**: tras jump · sshpass · NAT
+  **QEMU**: Alpine · br0/br1/br2 · SSH root/linkguard-test  |  **Ownership**: 8 peers (lila) = tenant-a
+end note
+
+@enduml

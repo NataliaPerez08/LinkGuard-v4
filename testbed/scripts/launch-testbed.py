@@ -156,7 +156,7 @@ def get_real_admin_token() -> str:
     global _REAL_ADMIN_TOKEN
     if _REAL_ADMIN_TOKEN:
         return _REAL_ADMIN_TOKEN
-    r = real_ssh("cat", "/etc/linkguard/secrets")
+    r = real_ssh("sudo", "cat", "/etc/linkguard/secrets")
     if r.returncode != 0 or not r.stdout.strip():
         raise RuntimeError(f"No pude leer ADMIN_TOKEN del orquestador real:\n{r.stderr}\n{r.stdout}")
     for line in r.stdout.splitlines():

@@ -18,7 +18,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 TESTBED_SCRIPT = ROOT / "testbed" / "scripts" / "launch-testbed.py"
-REPORT_PATH = ROOT / "docs" / "reports" / "cli-multiuser" / "hub-spoke" / "latest.html"
+REPORT_PATH = ROOT / "docs" / "reports" / "cli-multiuser" / "mesh" / "latest.html"
 
 ORCH_HOST = os.environ.get("TESTBED_REAL_ORCH_HOST", "101.44.24.91")
 ORCH_USER = os.environ.get("TESTBED_REAL_ORCH_USER", "root")
@@ -790,15 +790,18 @@ def _rtt_cell(r: PingResult) -> str:
     return "\u2014"
 
 
-def _path_type(src_id: str, dst_id: str) -> str:
+def _path_type(src_id: str, dst_id: str, topology: str = "hub-spoke") -> str:
     st = _peer_type(src_id)
     dt = _peer_type(dst_id)
+    if topology == "hub-spoke":
+        return "Relay via hub"
+    if topology == "mesh":
+        if st == dt and st == "NUBE":
+            return "P2P"
+        return "Relay via hub"
+    # hub-mesh
     if st == dt and st == "NUBE":
         return "P2P"
-    if st == dt and st == "QEMU":
-        return "Relay via hub"
-    if st == "VM" or dt == "VM":
-        return "Relay via hub"
     return "Relay via hub"
 
 
@@ -810,7 +813,15 @@ def _ttl_summary(ping_results: dict[str, dict[str, PingResult]]) -> str:
                 ttls.add(r.ttl)
     if not ttls:
         return "N/A"
-    return ", ".join(f"TTL={t}" + (" (P2P)" if t <= 64 else " (relay)") for t in sorted(ttls))
+    parts = []
+    for t in sorted(ttls):
+        if t == 64:
+            parts.append(f"TTL={t} (directo)")
+        elif t == 63:
+            parts.append(f"TTL={t} (relay 1 hop)")
+        else:
+            parts.append(f"TTL={t} (relay {64-t} hops)")
+    return ", ".join(parts)
 
 
 def render_html(timestamp: str, results: list[TopologyResult]) -> str:
@@ -918,7 +929,7 @@ def render_html(timestamp: str, results: list[TopologyResult]) -> str:
                 pr = r.ping_results.get(src_id, {}).get(dst_id)
                 if pr is None:
                     continue
-                ptype = _path_type(src_id, dst_id)
+                ptype = _path_type(src_id, dst_id, r.topology)
                 rtt = f'{pr.avg_ms:.1f}' if pr.avg_ms is not None else "\u2014"
                 loss = f'{pr.loss_pct:.0f}%'
                 ttl = str(pr.ttl) if pr.ttl else "\u2014"
@@ -1094,7 +1105,7 @@ def main() -> int:
     ts_slug = datetime.now(timezone.utc).astimezone().strftime("%Y%m%d_%H%M%S")
     if args.output == str(REPORT_PATH):
         date_dir = ts_slug[:4] + "-" + ts_slug[4:6] + "-" + ts_slug[6:8]
-        output_path = ROOT / "docs" / "reports" / "cli-multiuser" / "hub-spoke" / date_dir / f"reporte-mesh-{ts_slug}.html"
+        output_path = ROOT / "docs" / "reports" / "cli-multiuser" / "mesh" / date_dir / f"v2-reporte-mesh-{ts_slug}.html"
     else:
         output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)

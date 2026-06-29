@@ -1,0 +1,44 @@
+@startuml
+!theme plain
+skinparam defaultTextAlignment center
+skinparam backgroundColor #fafafa
+skinparam rectangle {
+  BorderColor #1565c0
+  BackgroundColor #e3f2fd
+}
+
+title Visión General de Tests — LinkGuard Releasev4\n553 tests · 0 fallos
+
+package "Unitarios (501)" as UNIT {
+  rectangle "orquestador\n388 tests" as U_ORCH #e3f2fd
+  rectangle "peer\n113 tests" as U_PEER #e3f2fd
+}
+
+package "Integración (17)" as INT {
+  rectangle "XML-RPC in-process\n17 tests" as INT_XML #fff3e0
+}
+
+package "E2E Mockeado (22)" as E2E_M {
+  rectangle "Full Stack\n14 tests" as E2E_FS #e8f5e9
+  rectangle "Hub-Agent + Orch\n8 tests" as E2E_HA #e8f5e9
+}
+
+package "WireGuard Real (10)" as WG_R {
+  rectangle "P2P Directo\n4 tests" as WG_P2P #f3e5f5
+  rectangle "Hub-Spoke\n2 tests" as WG_HS #f3e5f5
+  rectangle "Multitúnel\n2 tests" as WG_MT #f3e5f5
+  rectangle "ConfigGen\n1 test" as WG_CG #f3e5f5
+  rectangle "NAT Detect\n1 test" as WG_ND #f3e5f5
+}
+
+package "Orquestador Real (3)" as OR_R {
+  rectangle "EC2 + QEMU\n3 tests" as OR_3 #e8f5e9
+}
+
+note top of UNIT : Mock: subprocess, shutil,\nServerProxy
+note top of INT : Servidor XML-RPC real\nin-process, sin red
+note top of E2E_M : Mock subprocess solo,\nbus XML-RPC real
+note top of WG_R : VMs QEMU reales\n(orq/pa/pb en br0/br1/br2)
+note top of OR_R : Orquestador AWS EC2\n34.193.139.170
+
+@enduml

@@ -1,0 +1,474 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{listings}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{colortbl}
+
+\geometry{margin=1.2cm}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  showstringspaces=false,
+  frame=single,
+  backgroundcolor=\color{gray!5}
+}
+
+\definecolor{okgreen}{RGB}{63,185,80}
+\definecolor{warnyellow}{RGB}{210,153,34}
+\definecolor{failred}{RGB}{248,81,73}
+\definecolor{headerblue}{RGB}{121,192,255}
+\definecolor{tagblue}{RGB}{88,166,255}
+\definecolor{taggreen}{RGB}{63,185,80}
+\definecolor{tagpurple}{RGB}{210,168,255}
+
+\newcommand{\ok}[1]{\textcolor{okgreen}{\textbf{#1}}}
+\newcommand{\warn}[1]{\textcolor{warnyellow}{\textbf{#1}}}
+\newcommand{\fail}[1]{\textcolor{failred}{\textbf{#1}}}
+\newcommand{\partialcmd}[1]{\textcolor{warnyellow}{\textbf{#1}}}
+
+\title{Reporte Hub-Spoke CIDR 10.99.88.0/24 CLI Multiuser — LinkGuard v2}
+\author{LinkGuard v2}
+\date{2026-06-18 10:22:12 CST}
+
+\begin{document}
+\maketitle
+
+\section{Inventario de peers}
+\begin{longtable}{|c|c|c|c|c|}
+\hline
+Peer & IP tunel & Endpoint & NAT & Tipo \\ \hline
+57 nube (122.8.179.57) & 10.99.88.3 & 122.8.179.57:51820 & symmetric & NUBE \\ \hline
+40 vm (172.20.0.40) & 10.99.88.5 & 187.168.147.15:57849 & symmetric & VM \\ \hline
+141 nube (46.250.162.141) & 10.99.88.4 & 46.250.162.141:51820 & symmetric & NUBE \\ \hline
+185 nube (46.250.168.185) & 10.99.88.2 & 46.250.168.185:51820 & symmetric & NUBE \\ \hline
+qemu-orq & 10.20.30.4 & 110.238.90.22:12949 & symmetric & QEMU \\ \hline
+qemu-pa & 10.20.30.2 & 110.238.90.22:51820 & symmetric & QEMU \\ \hline
+qemu-pb & 10.20.30.3 & 110.238.90.22:51820 & symmetric & QEMU \\ \hline
+\end{longtable}
+
+Hub:  \texttt{101.44.24.91:51820} 101.44.24.91:51820  — IP tunel:  \texttt{""" + ALT\textbackslash{}_HUB\textbackslash{}_IP + """} """ + ALT\textbackslash{}_HUB\textbackslash{}_IP + """  | CIDR:  \texttt{""" + ALT\textbackslash{}_CIDR + """} """ + ALT\textbackslash{}_CIDR + """\\
+
+\section{Topologia:hub-spoke}
+Ping OK: 6/42 — TTLs: TTL=63 (relay 1 hop)\\
+
+\subsection{Matriz de conectividad}
+\begin{longtable}{|c|c|c|c|c|c|c|c|}
+\hline
+Origen \textbackslash{} Destino & 57 nube (122.8.179.57)10.99.88.3 & 40 vm (172.20.0.40)10.99.88.5 & 141 nube (46.250.162.141)10.99.88.4 & 185 nube (46.250.168.185)10.99.88.2 & qemu-orq10.20.30.4 & qemu-pa10.20.30.2 & qemu-pb10.20.30.3 \\ \hline
+57 nube (122.8.179.57)10.99.88.3 & -- & ✗ FALLO-- & OK2.9 ms & OK4.8 ms & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- \\ \hline
+40 vm (172.20.0.40)10.99.88.5 & ✗ FALLO-- & -- & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- \\ \hline
+141 nube (46.250.162.141)10.99.88.4 & OK2.9 ms & ✗ FALLO-- & -- & OK2.9 ms & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- \\ \hline
+185 nube (46.250.168.185)10.99.88.2 & OK4.7 ms & ✗ FALLO-- & OK2.9 ms & -- & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- \\ \hline
+qemu-orq10.20.30.4 & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- & -- & ✗ FALLO-- & ✗ FALLO-- \\ \hline
+qemu-pa10.20.30.2 & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- & -- & ✗ FALLO-- \\ \hline
+qemu-pb10.20.30.3 & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- & ✗ FALLO-- & -- \\ \hline
+\end{longtable}
+
+\subsection{Detalle por par}
+\begin{longtable}{|c|c|c|c|c|c|c|}
+\hline
+Origen & Destino & Tipo & RTT (ms) & Perdida & TTL & Estado \\ \hline
+57 nube (122.8.179.57)10.99.88.3 & 40 vm (172.20.0.40)10.99.88.5 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+57 nube (122.8.179.57)10.99.88.3 & 141 nube (46.250.162.141)10.99.88.4 & Relay via hub & 2.9 & 0\textbackslash{}% & 63 & OK \\ \hline
+57 nube (122.8.179.57)10.99.88.3 & 185 nube (46.250.168.185)10.99.88.2 & Relay via hub & 4.8 & 0\textbackslash{}% & 63 & OK \\ \hline
+57 nube (122.8.179.57)10.99.88.3 & qemu-orq10.20.30.4 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+57 nube (122.8.179.57)10.99.88.3 & qemu-pa10.20.30.2 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+57 nube (122.8.179.57)10.99.88.3 & qemu-pb10.20.30.3 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+40 vm (172.20.0.40)10.99.88.5 & 57 nube (122.8.179.57)10.99.88.3 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+40 vm (172.20.0.40)10.99.88.5 & 141 nube (46.250.162.141)10.99.88.4 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+40 vm (172.20.0.40)10.99.88.5 & 185 nube (46.250.168.185)10.99.88.2 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+40 vm (172.20.0.40)10.99.88.5 & qemu-orq10.20.30.4 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+40 vm (172.20.0.40)10.99.88.5 & qemu-pa10.20.30.2 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+40 vm (172.20.0.40)10.99.88.5 & qemu-pb10.20.30.3 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+141 nube (46.250.162.141)10.99.88.4 & 57 nube (122.8.179.57)10.99.88.3 & Relay via hub & 2.9 & 0\textbackslash{}% & 63 & OK \\ \hline
+141 nube (46.250.162.141)10.99.88.4 & 40 vm (172.20.0.40)10.99.88.5 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+141 nube (46.250.162.141)10.99.88.4 & 185 nube (46.250.168.185)10.99.88.2 & Relay via hub & 2.9 & 0\textbackslash{}% & 63 & OK \\ \hline
+141 nube (46.250.162.141)10.99.88.4 & qemu-orq10.20.30.4 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+141 nube (46.250.162.141)10.99.88.4 & qemu-pa10.20.30.2 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+141 nube (46.250.162.141)10.99.88.4 & qemu-pb10.20.30.3 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+185 nube (46.250.168.185)10.99.88.2 & 57 nube (122.8.179.57)10.99.88.3 & Relay via hub & 4.7 & 0\textbackslash{}% & 63 & OK \\ \hline
+185 nube (46.250.168.185)10.99.88.2 & 40 vm (172.20.0.40)10.99.88.5 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+185 nube (46.250.168.185)10.99.88.2 & 141 nube (46.250.162.141)10.99.88.4 & Relay via hub & 2.9 & 0\textbackslash{}% & 63 & OK \\ \hline
+185 nube (46.250.168.185)10.99.88.2 & qemu-orq10.20.30.4 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+185 nube (46.250.168.185)10.99.88.2 & qemu-pa10.20.30.2 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+185 nube (46.250.168.185)10.99.88.2 & qemu-pb10.20.30.3 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-orq10.20.30.4 & 57 nube (122.8.179.57)10.99.88.3 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-orq10.20.30.4 & 40 vm (172.20.0.40)10.99.88.5 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-orq10.20.30.4 & 141 nube (46.250.162.141)10.99.88.4 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-orq10.20.30.4 & 185 nube (46.250.168.185)10.99.88.2 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-orq10.20.30.4 & qemu-pa10.20.30.2 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-orq10.20.30.4 & qemu-pb10.20.30.3 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-pa10.20.30.2 & 57 nube (122.8.179.57)10.99.88.3 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-pa10.20.30.2 & 40 vm (172.20.0.40)10.99.88.5 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-pa10.20.30.2 & 141 nube (46.250.162.141)10.99.88.4 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-pa10.20.30.2 & 185 nube (46.250.168.185)10.99.88.2 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-pa10.20.30.2 & qemu-orq10.20.30.4 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-pa10.20.30.2 & qemu-pb10.20.30.3 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-pb10.20.30.3 & 57 nube (122.8.179.57)10.99.88.3 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-pb10.20.30.3 & 40 vm (172.20.0.40)10.99.88.5 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-pb10.20.30.3 & 141 nube (46.250.162.141)10.99.88.4 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-pb10.20.30.3 & 185 nube (46.250.168.185)10.99.88.2 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-pb10.20.30.3 & qemu-orq10.20.30.4 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+qemu-pb10.20.30.3 & qemu-pa10.20.30.2 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+\end{longtable}
+
+\subsection{Throughput}
+\begin{longtable}{|c|c|c|c|c|}
+\hline
+Tipo & Cliente & Velocidad & Tamanio & Estado \\ \hline
+NUBE & peer-122-8-179-57 & 9.04 Mbps & 0 MB & OK \\ \hline
+NUBE & peer-46-250-162-141 & 4.73 Mbps & 0 MB & OK \\ \hline
+QEMU & qemu-pa & -- & -- & FALLO \\ \hline
+\end{longtable}
+
+\subsection{Configuracion WireGuard capturada}
+\subsubsection*{Orquestador (wg-HUB)}
+\begin{lstlisting}
+interface: wg-HUB
+  public key: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  private key: (hidden)
+  listening port: 51820
+
+peer: lWN2TUvizI+PuFwnFQP7FKh5ja4N0kvSk/52v2C4uEI=
+  endpoint: 110.238.90.22:12948
+  allowed ips: 10.20.30.3/32
+  latest handshake: 10 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: sNtSh964pn5YOIu0ocPrjOHE4rpMKY3cd0NXPv6y/DE=
+  endpoint: 110.238.90.22:12947
+  allowed ips: 10.20.30.2/32
+  latest handshake: 10 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: eZzONDU9IPa1b7KifnfgfdZuZanZ82iFU4v1z8nYa18=
+  endpoint: 110.238.90.22:12949
+  allowed ips: 10.20.30.4/32
+  latest handshake: 11 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: zW4+1MmDRC7rTjVlUZByRbCceHkD9xdCpRD3uXdCICU=
+  endpoint: 187.168.147.15:57849
+  allowed ips: 10.99.88.5/32
+  latest handshake: 14 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: 4k00dn2OAUzCQ+HOCjg75Eb4ZRQO/X4inY8p41OECHs=
+  endpoint: 46.250.162.141:51820
+  allowed ips: 10.99.88.4/32
+  latest handshake: 19 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: 9q8wxnTSXra6aEud4FR1FG3oFaLKn2yOJ2L3JC962iY=
+  endpoint: 122.8.179.57:51820
+  allowed ips: 10.99.88.3/32
+  latest handshake: 21 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: O4HGr0xARxa6TrXAiPjJfbVSvjQZXfeBSpVE0NYvXTo=
+  endpoint: 46.250.168.185:51820
+  allowed ips: 10.99.88.2/32
+  latest handshake: 22 seconds ago
+  transfer: 180 B received, 92 B sent
+
+\end{lstlisting}
+
+\subsubsection*{Orquestador config (wg-HUB)}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = QJSunAcDAPan7XuY3fcY6XIYLNlsKCLTwSzX8HqMBVw=
+
+[Peer]
+PublicKey = O4HGr0xARxa6TrXAiPjJfbVSvjQZXfeBSpVE0NYvXTo=
+AllowedIPs = 10.99.88.2/32
+Endpoint = 46.250.168.185:51820
+
+[Peer]
+PublicKey = 9q8wxnTSXra6aEud4FR1FG3oFaLKn2yOJ2L3JC962iY=
+AllowedIPs = 10.99.88.3/32
+Endpoint = 122.8.179.57:51820
+
+[Peer]
+PublicKey = 4k00dn2OAUzCQ+HOCjg75Eb4ZRQO/X4inY8p41OECHs=
+AllowedIPs = 10.99.88.4/32
+Endpoint = 46.250.162.141:51820
+
+[Peer]
+PublicKey = zW4+1MmDRC7rTjVlUZByRbCceHkD9xdCpRD3uXdCICU=
+AllowedIPs = 10.99.88.5/32
+Endpoint = 187.168.147.15:57849
+
+[Peer]
+PublicKey = eZzONDU9IPa1b7KifnfgfdZuZanZ82iFU4v1z8nYa18=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 110.238.90.22:12949
+
+[Peer]
+PublicKey = sNtSh964pn5YOIu0ocPrjOHE4rpMKY3cd0NXPv6y/DE=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 110.238.90.22:12947
+
+[Peer]
+PublicKey = lWN2TUvizI+PuFwnFQP7FKh5ja4N0kvSk/52v2C4uEI=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 110.238.90.22:12948
+
+\end{lstlisting}
+
+\subsubsection*{185 nube (46.250.168.185) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: O4HGr0xARxa6TrXAiPjJfbVSvjQZXfeBSpVE0NYvXTo=
+  private key: (hidden)
+  listening port: 51820
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 24 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{185 nube (46.250.168.185) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = EBShhX74qAiB4Zh3TH/bq6XU2AE/cwcdOzAcOQdfP3s=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{57 nube (122.8.179.57) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: 9q8wxnTSXra6aEud4FR1FG3oFaLKn2yOJ2L3JC962iY=
+  private key: (hidden)
+  listening port: 51820
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 25 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{57 nube (122.8.179.57) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = iAeJtNOSfhtZ1kraEY+GKi7FlKCZ922LPp8FYYiGD2I=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{141 nube (46.250.162.141) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: 4k00dn2OAUzCQ+HOCjg75Eb4ZRQO/X4inY8p41OECHs=
+  private key: (hidden)
+  listening port: 51820
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 23 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{141 nube (46.250.162.141) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = eLrCUJoDd/n2aka/7H9mvjgjaF7PuCKRKyYwvLM1vWM=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{40 vm (172.20.0.40) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: zW4+1MmDRC7rTjVlUZByRbCceHkD9xdCpRD3uXdCICU=
+  private key: (hidden)
+  listening port: 51817
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 19 seconds ago
+  transfer: 42.68 KiB received, 161.32 KiB sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{40 vm (172.20.0.40) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51817
+PrivateKey = qPuJwau7Npbr/fJ4pd7iPgmXaDo8bKGBv1p254w6H0I=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{qemu-orq — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: eZzONDU9IPa1b7KifnfgfdZuZanZ82iFU4v1z8nYa18=
+  private key: (hidden)
+  listening port: 51820
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 17 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{qemu-orq — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = UFnbbN+4kUKBTtYJKya8nYpcIQ49aviZEExhzghjwFU=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{qemu-pa — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: sNtSh964pn5YOIu0ocPrjOHE4rpMKY3cd0NXPv6y/DE=
+  private key: (hidden)
+  listening port: 51820
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 18 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{qemu-pa — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = kJDNdLYhI5mhV5r0yB+i+bUc/vg0fTyQFERKlZomAF8=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{qemu-pb — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: lWN2TUvizI+PuFwnFQP7FKh5ja4N0kvSk/52v2C4uEI=
+  private key: (hidden)
+  listening port: 51820
+
+peer: tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+  endpoint: 101.44.24.91:51820
+  allowed ips: 10.99.88.0/24
+  latest handshake: 17 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{qemu-pb — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = sAjpWok7N7qnL/ow4LTuKQrjitM5LQ1roxhIM2dKWEo=
+
+[Peer]
+PublicKey = tt3jFwLajpMNJt/riXdwkjjMI+xqIkRUoTvAHOa3Cwk=
+AllowedIPs = 10.99.88.0/24
+Endpoint = 101.44.24.91:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\section{Resumen por topologia}
+\begin{longtable}{|c|c|c|c|c|c|}
+\hline
+Topologia & Ping OK & RTT minimo & RTT promedio & RTT maximo & Throughput \\ \hline
+hub-spoke & 6/42 & 2.9 & 3.5 & 4.8 & nube: 6.9 Mbps \\ \hline
+\end{longtable}
+
+\section{Modo de autenticacion CLI}
+\begin{longtable}{|c|c|c|}
+\hline
+Operacion & Usuario & Auth \\ \hline
+network.* (create/delete/topology) & admin & --admin-token \\ \hline
+peer.list (todos los peers) & admin & --admin-token \\ \hline
+peer.unregister & tenant-a & --token(JWT) \\ \hline
+Ping / iperf3 / WG capture & -- & SSH directo \\ \hline
+\end{longtable}
+
+Usuario tenant:  \texttt{tenant-a} tenant-a  | JWT generado via  \texttt{auth-login} auth-login\\
+
+\section{Diagnostico de fallas}
+\textbf{Resultados de esta corrida:} Resultados de esta corrida:\\
+
+\begin{longtable}{|c|c|c|}
+\hline
+Topologia & Ping OK & Estado \\ \hline
+hub-spoke & 6/42 & ⚠️ \\ \hline
+\end{longtable}
+
+\textbf{Diagnostico por topologia:} Diagnostico por topologia:\\
+
+\textbf{hub-spoke:} hub-spoke:  6 rutas OK, 0 con perdida parcial (<80\textbackslash{}%), 36 con perdida ≥80\textbackslash{}%.\\
+
+\textbf{Nueva terminal (172.20.0.40):} Nueva terminal (172.20.0.40):  Esta VM esta detras de un jump-host y podria no tener conectividad directa al orquestador (101.44.24.91). Verificar ruta de red y NAT en el jump-host 100.115.215.49.\\
+
+\textbf{Fallos hacia QEMU — NAT simetrico:} Fallos hacia QEMU — NAT simetrico:  Los QEMU estan detras del host local con NAT de puerto dinamico. El hub conoce el endpoint NAT del QEMU ( \texttt{HOST:PUERTO\textbackslash{}_A} HOST:PUERTO\textbackslash{}_A ). Al iniciar handshake hacia ese endpoint, el NAT simetrico asigna un puerto diferente ( \texttt{PUERTO\textbackslash{}_B} PUERTO\textbackslash{}_B ) y el QEMU nunca recibe el paquete → 100\textbackslash{}% perdida.\\
+
+\textbf{Sugerencia:} Sugerencia:  Rutas explicitas via hub desde nubes hacia los destinos QEMU, o port forwarding UDP fijo en el host local hacia los puertos WireGuard de cada VM QEMU para eliminar la dependencia de NAT simetrico.\\
+
+
+\end{document}

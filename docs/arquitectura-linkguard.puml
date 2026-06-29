@@ -1,0 +1,70 @@
+@startuml arquitectura-linkguard
+title Arquitectura LinkGuard: Componentes y Flujos
+
+package "Orchestrator Host" {
+    [Orchestrator\n(:8000/RPC2)] as Orch
+    [Hub Agent\n(:9000/RPC2)] as Hub
+    database "state.json" as State
+    database "events.jsonl" as Events
+    file "/etc/linkguard/secrets" as Secrets
+    file "/etc/linkguard/jwt_secret" as JWT
+}
+
+package "Peer Host(s)" {
+    [wg-auto-register\n(peer_register)] as Peer
+    file "wg0.conf" as WGConf
+    file "wg-auto.json" as PeerState
+    file "/etc/linkguard/peer.env" as PeerEnv
+}
+
+package "Red WireGuard" {
+    cloud "wg-HUB\n(Hub Agent)" as WGHUB
+    cloud "wg0\n(Peer)" as WG0
+}
+
+Orch --> State : lee/escribe
+Orch --> Events : append
+Orch --> Secrets : ADMIN_TOKEN\nORCH_TOKEN\nHUB_AGENT_TOKEN
+Orch --> JWT : JWT signing key
+
+Orch <--> Hub : XML-RPC\nHUB_AGENT_TOKEN
+Hub --> WGHUB : wg set / wg-quick
+
+Peer --> PeerEnv : carga vars
+Peer --> PeerState : lee/escribe JWT\nconfig_version
+Peer --> WGConf : genera .conf
+Peer --> WG0 : wg syncconf
+
+Peer <--> Orch : XML-RPC\nauth.login/refresh\npeer.register/heartbeat\nconfig.get_peer_config
+
+Peer ..> Hub : (indirecto via Orch)
+
+note right of Orch
+  **Responsabilidades**:
+  - Gestión de usuarios/tenants
+  - Asignación de IPs por red
+  - Control de quotas (global)
+  - Distribución de configs
+  - Auto-approve de peers
+  - Backup automático
+end note
+
+note left of Peer
+  **Responsabilidades**:
+  - Generar claves WireGuard
+  - Registrarse con orchestrator
+  - Heartbeat cada 25s
+  - Detectar NAT type
+  - Aplicar configs dinámicamente
+  - Probar reachability (hub-mesh)
+end note
+
+note bottom of Hub
+  **Responsabilidades**:
+  - Gestionar wg-HUB interface
+  - Aplicar AllowedIPs por peer
+  - NAT/masquerade (iptables)
+  - sysctl forwarding
+end note
+
+@enduml

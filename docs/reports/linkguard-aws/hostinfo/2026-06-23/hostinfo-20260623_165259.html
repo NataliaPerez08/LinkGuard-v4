@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Info de maquinas — LinkGuard v2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+         background: #0d1117; color: #c9d1d9; padding: 20px; }
+  h1 { color: #58a6ff; font-size: 1.8em; margin-bottom: 5px; }
+  h2 { color: #79c0ff; font-size: 1.4em; margin: 25px 0 15px; border-bottom: 1px solid #21262d; padding-bottom: 8px; }
+  h3 { color: #a5d6ff; font-size: 1.1em; margin: 15px 0 10px; }
+  code { background: #21262d; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 20px; font-size: 0.85em; }
+  th, td { border: 1px solid #30363d; padding: 6px 10px; text-align: left; }
+  th { background: #161b22; font-weight: 600; color: #79c0ff; }
+  td { background: #0d1117; }
+  .section { background: #161b22; border-radius: 8px; padding: 16px; margin-bottom: 20px; border: 1px solid #30363d; }
+  .tag-nube { background: #1f6feb33; color: #58a6ff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-vm { background: #6e40c933; color: #d2a8ff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-rpi { background: #da363333; color: #ff7b72; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-orq { background: #23863633; color: #3fb950; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .tag-local { background: #f0883e33; color: #f0883e; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+  .ok { color: #3fb950; font-weight: bold; }
+  .fail { color: #f85149; font-weight: bold; }
+  .warn { color: #d29922; font-weight: bold; }
+  .legend { color: #8b949e; margin-top: 10px; font-size: 0.8em; }
+  .card { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; margin-bottom: 15px; }
+  .card h3 { margin-top: 0; }
+  .kv { display: grid; grid-template-columns: 110px 1fr; gap: 4px 12px; font-size: 0.9em; }
+  .kv .k { color: #79c0ff; font-weight: 600; }
+  pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 10px; font-size: 0.8em; overflow-x: auto; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Info de maquinas de prueba — LinkGuard v2</h1>
+<p>Generado: <code>2026-06-23 16:52:59 CST</code></p>
+<p>Maquinas: 7 (3 nubes AWS + orquestador + 1 VM + 1 RPi5 via jump + parrot local)</p>
+
+<div class="section"><h2>Resumen</h2><table><tr><th>Maquina</th><th>Rol</th><th>Hostname</th><th>OS</th><th>Kernel</th><th>CPU</th><th>Mem</th><th>Disk</th><th>Uptime</th><th>WG svc</th><th>Pub IP</th></tr>
+<tr><td>119 aws (54.210.49.136)</td><td><span class="tag-nube">NUBE</span></td><td>ip-10-20-1-62</td><td>Ubuntu 22.04.5 LTS</td><td><code>6.8.0-1057-aws</code></td><td>Neoverse-N1 (2 nucleos)</td><td>0.3 / 1.8 GB</td><td>2.0G / 39G (5%)</td><td>1h 6m</td><td class="ok">active</td><td><code>54.210.49.136</code></td></tr>
+<tr><td>76 aws (3.228.113.66)</td><td><span class="tag-nube">NUBE</span></td><td>ip-10-20-1-230.ec2.internal</td><td>Amazon Linux 2023.12.20260611</td><td><code>6.12.90-120.164.amzn2023.aarch64</code></td><td>Neoverse-N1 (2 nucleos)</td><td>0.3 / 1.8 GB</td><td>1.9G / 8.0G (24%)</td><td>1h 6m</td><td class="ok">active</td><td><code>3.228.113.66</code></td></tr>
+<tr><td>143 aws (98.87.229.24)</td><td><span class="tag-nube">NUBE</span></td><td>ip-10-20-1-11.ec2.internal</td><td>AlmaLinux 9.8 (Olive Jaguar)</td><td><code>5.14.0-687.5.3.el9_8.aarch64</code></td><td>Neoverse-N1 (2 nucleos)</td><td>0.3 / 1.5 GB</td><td>1.3G / 39G (4%)</td><td>1h 6m</td><td class="ok">active</td><td><code>98.87.229.24</code></td></tr>
+<tr><td>40 vm (172.20.0.40)</td><td><span class="tag-vm">VM</span></td><td>alpine</td><td>Alpine Linux v3.22</td><td><code>7.0.2-2-pve</code></td><td>Intel(R) Core(TM) i3-8109U CPU @ 3.00GHz (1 nucleos)</td><td>0.0 / 0.5 GB</td><td>73.7M / 7.8G (1%)</td><td>7d 7h</td><td class="ok">active</td><td><code>187.168.147.15</code></td></tr>
+<tr><td>7 rpi5 (172.20.0.7)</td><td><span class="tag-rpi">RPi5</span></td><td>frambuesita</td><td>Debian GNU/Linux 13 (trixie)</td><td><code>6.12.75+rpt-rpi-v8</code></td><td>Cortex-A72 (4 nucleos)</td><td>0.3 / 7.6 GB</td><td>6.9G / 29G (26%)</td><td>3d 21h</td><td class="ok">active</td><td><code>2806:106e:18:7ad8:da3a:ddff:fef3:bb0</code></td></tr>
+<tr><td>orq (34.193.139.170)</td><td><span class="tag-orq">ORQ</span></td><td>ip-10-20-1-204</td><td>Debian GNU/Linux 12 (bookworm)</td><td><code>6.12.90+deb12.1-cloud-arm64</code></td><td>Neoverse-N1 (4 nucleos)</td><td>0.4 / 15.4 GB</td><td>1.2G / 7.7G (16%)</td><td>1h 6m</td><td class="warn">inactive</td><td><code>34.193.139.170</code></td></tr>
+<tr><td>parrot (local)</td><td><span class="tag-local">LOCAL</span></td><td>parrot</td><td>Parrot Security 7.3 (echo)</td><td><code>7.0.9+parrot7-amd64</code></td><td>Intel(R) Core(TM) i3-N305 (8 nucleos)</td><td>5.6 / 7.4 GB</td><td>65G / 468G (14%)</td><td>2h 10m</td><td class="ok">active</td><td><code>110.238.90.23</code></td></tr>
+</table></div>
+<div class="section"><h2>Detalle por maquina</h2>
+<div class="card"><h3>119 aws (54.210.49.136) <span class="tag-nube">NUBE</span></h3>
+<div class="kv">
+<div class="k">hostname</div><div>ip-10-20-1-62</div>
+<div class="k">OS</div><div>Ubuntu 22.04.5 LTS (aarch64)</div>
+<div class="k">kernel</div><div>6.8.0-1057-aws</div>
+<div class="k">uptime</div><div>1h 6m</div>
+<div class="k">CPU</div><div>Neoverse-N1 (2 nucleos)</div>
+<div class="k">Mem</div><div>0.3 / 1.8 GB</div>
+<div class="k">Disk</div><div>2.0G / 39G (5%)</div>
+<div class="k">Load</div><div>0.00 0.00 0.00</div>
+<div class="k">Procs</div><div>150</div>
+<div class="k">Pub IP</div><div>54.210.49.136</div>
+<div class="k">Net</div><div>ens5: 10.20.1.62/24 (v4); wg0: 10.20.30.2/32 (v4)</div>
+<div class="k">WG svc</div><div>active</div>
+<div class="k">WG ifaces</div><div>wg0</div>
+<div class="k">WG peers</div><div>0</div>
+</div></div>
+<div class="card"><h3>76 aws (3.228.113.66) <span class="tag-nube">NUBE</span></h3>
+<div class="kv">
+<div class="k">hostname</div><div>ip-10-20-1-230.ec2.internal</div>
+<div class="k">OS</div><div>Amazon Linux 2023.12.20260611 (aarch64)</div>
+<div class="k">kernel</div><div>6.12.90-120.164.amzn2023.aarch64</div>
+<div class="k">uptime</div><div>1h 6m</div>
+<div class="k">CPU</div><div>Neoverse-N1 (2 nucleos)</div>
+<div class="k">Mem</div><div>0.3 / 1.8 GB</div>
+<div class="k">Disk</div><div>1.9G / 8.0G (24%)</div>
+<div class="k">Load</div><div>0.00 0.00 0.00</div>
+<div class="k">Procs</div><div>143</div>
+<div class="k">Pub IP</div><div>3.228.113.66</div>
+<div class="k">Net</div><div>ens5: 10.20.1.230/24 (v4); wg0: 10.20.30.3/32 (v4)</div>
+<div class="k">WG svc</div><div>active</div>
+<div class="k">WG ifaces</div><div>wg0</div>
+<div class="k">WG peers</div><div>0</div>
+</div></div>
+<div class="card"><h3>143 aws (98.87.229.24) <span class="tag-nube">NUBE</span></h3>
+<div class="kv">
+<div class="k">hostname</div><div>ip-10-20-1-11.ec2.internal</div>
+<div class="k">OS</div><div>AlmaLinux 9.8 (Olive Jaguar) (aarch64)</div>
+<div class="k">kernel</div><div>5.14.0-687.5.3.el9_8.aarch64</div>
+<div class="k">uptime</div><div>1h 6m</div>
+<div class="k">CPU</div><div>Neoverse-N1 (2 nucleos)</div>
+<div class="k">Mem</div><div>0.3 / 1.5 GB</div>
+<div class="k">Disk</div><div>1.3G / 39G (4%)</div>
+<div class="k">Load</div><div>0.08 0.02 0.01</div>
+<div class="k">Procs</div><div>160</div>
+<div class="k">Pub IP</div><div>98.87.229.24</div>
+<div class="k">Net</div><div>eth0: 10.20.1.11/24 (v4); wg0: 10.20.30.4/32 (v4)</div>
+<div class="k">WG svc</div><div>active</div>
+<div class="k">WG ifaces</div><div>wg0</div>
+<div class="k">WG peers</div><div>0</div>
+</div></div>
+<div class="card"><h3>40 vm (172.20.0.40) <span class="tag-vm">VM</span></h3>
+<div class="kv">
+<div class="k">hostname</div><div>alpine</div>
+<div class="k">OS</div><div>Alpine Linux v3.22 (x86_64)</div>
+<div class="k">kernel</div><div>7.0.2-2-pve</div>
+<div class="k">uptime</div><div>7d 7h</div>
+<div class="k">CPU</div><div>Intel(R) Core(TM) i3-8109U CPU @ 3.00GHz (1 nucleos)</div>
+<div class="k">Mem</div><div>0.0 / 0.5 GB</div>
+<div class="k">Disk</div><div>73.7M / 7.8G (1%)</div>
+<div class="k">Load</div><div>0.77 0.89 0.80</div>
+<div class="k">Procs</div><div>14</div>
+<div class="k">Pub IP</div><div>187.168.147.15</div>
+<div class="k">Net</div><div>eth0: 172.20.0.40/24 (v4); wg0: 10.20.30.5/32 (v4)</div>
+<div class="k">WG svc</div><div>active</div>
+<div class="k">WG ifaces</div><div>wg0</div>
+<div class="k">WG peers</div><div>0</div>
+</div></div>
+<div class="card"><h3>7 rpi5 (172.20.0.7) <span class="tag-rpi">RPi5</span></h3>
+<div class="kv">
+<div class="k">hostname</div><div>frambuesita</div>
+<div class="k">OS</div><div>Debian GNU/Linux 13 (trixie) (aarch64)</div>
+<div class="k">kernel</div><div>6.12.75+rpt-rpi-v8</div>
+<div class="k">uptime</div><div>3d 21h</div>
+<div class="k">CPU</div><div>Cortex-A72 (4 nucleos)</div>
+<div class="k">Mem</div><div>0.3 / 7.6 GB</div>
+<div class="k">Disk</div><div>6.9G / 29G (26%)</div>
+<div class="k">Load</div><div>0.00 0.00 0.00</div>
+<div class="k">Procs</div><div>190</div>
+<div class="k">Pub IP</div><div>2806:106e:18:7ad8:da3a:ddff:fef3:bb0</div>
+<div class="k">Net</div><div>eth0: 172.20.0.7/24 (v4); wg0: 10.20.30.6/32 (v4); wlan0: 2806:106e:18:7ad8:da3a:ddff:fef3:bb0/64 (v6), 192.168.1.103/24 (v4)</div>
+<div class="k">WG svc</div><div>active</div>
+<div class="k">WG ifaces</div><div>wg0</div>
+<div class="k">WG peers</div><div>0</div>
+</div></div>
+<div class="card"><h3>orq (34.193.139.170) <span class="tag-orq">ORQ</span></h3>
+<div class="kv">
+<div class="k">hostname</div><div>ip-10-20-1-204</div>
+<div class="k">OS</div><div>Debian GNU/Linux 12 (bookworm) (aarch64)</div>
+<div class="k">kernel</div><div>6.12.90+deb12.1-cloud-arm64</div>
+<div class="k">uptime</div><div>1h 6m</div>
+<div class="k">CPU</div><div>Neoverse-N1 (4 nucleos)</div>
+<div class="k">Mem</div><div>0.4 / 15.4 GB</div>
+<div class="k">Disk</div><div>1.2G / 7.7G (16%)</div>
+<div class="k">Load</div><div>0.01 0.01 0.00</div>
+<div class="k">Procs</div><div>133</div>
+<div class="k">Pub IP</div><div>34.193.139.170</div>
+<div class="k">Net</div><div>ens5: 10.20.1.204/24 (v4); wg-HUB: 10.20.30.1/24 (v4)</div>
+<div class="k">WG svc</div><div>inactive</div>
+<div class="k">WG ifaces</div><div>wg-HUB</div>
+<div class="k">WG peers</div><div>0</div>
+</div></div>
+<div class="card"><h3>parrot (local) <span class="tag-local">LOCAL</span></h3>
+<div class="kv">
+<div class="k">hostname</div><div>parrot</div>
+<div class="k">OS</div><div>Parrot Security 7.3 (echo) (x86_64)</div>
+<div class="k">kernel</div><div>7.0.9+parrot7-amd64</div>
+<div class="k">uptime</div><div>2h 10m</div>
+<div class="k">CPU</div><div>Intel(R) Core(TM) i3-N305 (8 nucleos)</div>
+<div class="k">Mem</div><div>5.6 / 7.4 GB</div>
+<div class="k">Disk</div><div>65G / 468G (14%)</div>
+<div class="k">Load</div><div>0.65 0.86 0.97</div>
+<div class="k">Procs</div><div>273</div>
+<div class="k">Pub IP</div><div>110.238.90.23</div>
+<div class="k">Net</div><div>br0: 192.168.100.1/24 (v4); br1: 10.0.0.1/24 (v4); br2: 10.0.1.1/24 (v4); tailscale0: 100.85.232.106/32 (v4), fd7a:115c:a1e0::8b34:e86a/128 (v6); wlp1s0: 11.248.13.209/23 (v4)</div>
+<div class="k">WG svc</div><div>active</div>
+<div class="k">WG ifaces</div><div>(ninguna)</div>
+<div class="k">WG peers</div><div>0</div>
+</div></div>
+</div>
+<div class="section"><h2>Topologia de acceso</h2>
+<table><tr><th>Tipo</th><th>Maquina</th><th>Acceso</th></tr>
+<tr><td><span class="tag-nube">NUBE</span></td><td>54.210.49.136 / 3.228.113.66 / 98.87.229.24</td><td>llave SSH (ubuntu / ec2-user) + sudo</td></tr>
+<tr><td><span class="tag-orq">ORQ</span></td><td>34.193.139.170</td><td>llave SSH (admin) + sudo</td></tr>
+<tr><td><span class="tag-vm">VM</span></td><td>172.20.0.40</td><td>password via jump <code>root@100.115.215.49</code> (root)</td></tr>
+<tr><td><span class="tag-rpi">RPi5</span></td><td>172.20.0.7</td><td>password via jump <code>root@100.115.215.49</code> (natalia)</td></tr>
+<tr><td><span class="tag-local">LOCAL</span></td><td>parrot</td><td>local (sudo)</td></tr>
+</table>
+<p class="legend">Sudo orquestador: no definido (sudo -n)</p>
+</div>
+</body></html>

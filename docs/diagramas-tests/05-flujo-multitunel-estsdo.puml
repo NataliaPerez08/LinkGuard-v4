@@ -1,0 +1,55 @@
+@startuml
+!theme plain
+skinparam backgroundColor #fafafa
+skinparam node {
+  BorderColor #1565c0
+  BackgroundColor #e3f2fd
+}
+skinparam component {
+  BorderColor #1565c0
+  BackgroundColor #e8f5e9
+}
+
+title Escenarios Multitúnel, ConfigGen y NAT Detection\n5 tests · simultaneidad + persistencia + configuración + detección
+
+node "orq (HUB)" as ORQ
+node "pa" as PA
+node "pb" as PB
+
+package "TestMultitunelYEstado (2 tests)" as MULTI {
+  rectangle "test_dos_tuneles_simultaneos" as T_MULTI
+  rectangle "test_estado_wg_show" as T_WGSHOW
+  T_MULTI -down- T_WGSHOW
+}
+package "TestConfigGenConLlavesReales (1 test)" as CG {
+  rectangle "test_config_gen_produce\n_formato_valido" as T_CG
+}
+package "TestNATTypeDetection (1 test)" as NAT {
+  rectangle "test_detectar_nat_type\n_en_vm" as T_NAT
+}
+
+== test_dos_tuneles_simultaneos ==
+note over T_MULTI : Configura 2 túneles simultáneos:\n1) pa ↔ orq (hub)\n2) pb ↔ orq (hub)\n\nPing: pa → pb vía hub\nPing: pa → hub\nAmbos exitosos
+PA -down--> ORQ : ping 10.99.0.3 (pb via hub)
+PA -down--> ORQ : ping 10.99.0.1 (hub directo)
+
+== test_estado_wg_show ==
+note over T_WGSHOW : Configura túnel directo pa ↔ pb\nwg show → 1 peer (pb_pub)\nwg latest-handshakes → pb_pub > 0\nwg endpoints → pb_pub → 10.0.0.30:51820
+
+== test_config_gen_produce_formato_valido ==
+note over T_CG : Crea key temporal, env vars\nImporta config_gen vía importlib\nGenera [Interface] + [Peer] para\nhub-mesh con peers directos\nCopia .conf a pa via SCP\nwg-quick up → ok\nwg show → peer visible
+
+component "config_gen.py" as CGGEN
+component "wg0.conf temporal" as WGCONF
+note right of WGCONF : [Interface]\nAddress=10.99.0.2/24\nPrivateKey=...\nListenPort=51820\n\n[Peer]\nPublicKey=hub_pub\nEndpoint=10.0.0.30:51820\nAllowedIPs=10.99.0.0/24
+CGGEN -right-> WGCONF : genera
+PA --up--> WGCONF : copia vía SCP
+
+== test_detectar_nat_type_en_vm ==
+note over T_NAT : Simula detect_nat_type()\ncon datos desde pa (PUBLIC_IP=10.0.0.20)\nNAT type esperado: "none"\n(red interna br1 sin NAT)
+
+component "nat.py" as NATPY
+NATPY -down-> PA : llama detect_nat_type()
+PA --> NATPY : "none"
+
+@enduml

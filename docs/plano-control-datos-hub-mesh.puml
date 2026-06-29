@@ -1,0 +1,62 @@
+@startuml plano-control-datos-hub-mesh
+title Hub-Mesh: Planos de Control y Datos
+
+skinparam backgroundColor #FEFEFE
+
+rectangle "Plano de Control" as PC #E3F2FD {
+    node "Orchestrator\n:8000" as Orch
+    node "Peer A\n(IP pública)" as PA
+    node "Peer B\n(IP pública)" as PB
+    node "Peer C\n(NAT simétrico)" as PC2
+}
+
+rectangle "Plano de Datos" as PD #E8F5E9 {
+    node "HUB\nwg-HUB :51820" as HUB
+    node "Peer A\nwg0" as WGA
+    node "Peer B\nwg0" as WGB
+    node "Peer C\nwg0" as WGC
+}
+
+' Control plane
+PA -up-> Orch : register/heartbeat\n+ nat_type
+PB -up-> Orch : register/heartbeat\n+ nat_type
+PC2 -up-> Orch : register/heartbeat\n+ nat_type
+
+' Data plane - hybrid
+WGA <-right-> WGB : WireGuard directo\n(ambos alcanzables)
+WGA <-down-> HUB : WireGuard relay
+WGB <-down-> HUB : WireGuard relay
+WGC <-down-> HUB : WireGuard relay
+
+note right of WGA
+  **Data Flow - Directo**
+  Peer A ↔ Peer B
+  Ambos con IP pública
+  1 salto, baja latencia
+end note
+
+note bottom of HUB
+  **Data Flow - Relay**
+  Peer C (NAT simétrico)
+  Tráfico via HUB como fallback
+  2 saltos, latencia media
+end note
+
+note bottom of Orch
+  **Control Flow**
+  - Clasifica peers:
+    * direct (alcanzables)
+    * relay_only (NAT simétrico)
+  - probe_direct_peers()
+  - peer.report_reachability()
+end note
+
+note bottom of PC2
+  **Detección NAT**
+  Orchestrator detecta nat_type
+  y clasifica automáticamente:
+  - none / full-cone → direct
+  - symmetric → relay_only
+end note
+
+@enduml

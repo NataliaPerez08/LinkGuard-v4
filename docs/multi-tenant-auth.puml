@@ -1,0 +1,61 @@
+@startuml multi-tenant-auth
+title Flujo Multi-Tenant: Autenticación y Aislamiento
+
+actor "Admin" as Admin
+participant "orch-cli" as CLI
+participant "Orchestrator" as Orch
+participant "Tenant A\n(user_a)" as TA
+participant "Peer A1\n(peer_a1)" as PA1
+participant "Tenant B\n(user_b)" as TB
+participant "Peer B1\n(peer_b1)" as PB1
+
+== Provisioning de Tenant ==
+Admin -> CLI : orch-cli user-create tenant-a --admin-token $ADMIN
+CLI -> Orch : orch.user-create("tenant-a", admin_token)
+Orch -> Orch : _issue_user_token("tenant-a")\ngenera u_<hex16>
+Orch --> CLI : {user_id: "tenant-a", token: "u_abc..."}
+CLI --> Admin : token guardado
+
+== Tenant obtiene JWT ==
+TA -> CLI : orch-cli auth-login tenant-a $USER_TOKEN
+CLI -> Orch : auth.login("tenant-a", peer_id, user_token, scopes)
+Orch -> Orch : _check_user_token\nvalida token del tenant
+Orch --> CLI : {jwt, expires_at}
+CLI --> TA : JWT (válido 600s)
+
+== Peer de Tenant A se registra ==
+PA1 -> Orch : peer.register("peer_a1", pub_key, endpoint, jwt)
+Orch -> Orch : _auth_from_token(jwt)\n→ user_id="tenant-a"
+Orch -> Orch : rpc_peer_register\nuser_id="tenant-a" guardado en peer
+Orch --> PA1 : {peer_id, wg_ip, config_version}
+
+== Peer de Tenant B se registra ==
+PB1 -> Orch : peer.register("peer_b1", pub_key, endpoint, jwt)
+Orch -> Orch : _auth_from_token(jwt)\n→ user_id="tenant-b"
+Orch -> Orch : rpc_peer_register\nuser_id="tenant-b" guardado en peer
+Orch --> PB1 : {peer_id, wg_ip, config_version}
+
+== Aislamiento: Peer A intenta acceder a Peer B ==
+PA1 -> Orch : peer.get("peer_b1", jwt_de_tenant_a)
+Orch -> Orch : _auth_from_token(jwt)\n→ user_id="tenant-a"
+Orch -> Orch : _enforce_tenant_for_peer("tenant-a", "peer_b1")
+Orch -> Orch : peer.user_id == "tenant-b" ≠ "tenant-a"
+Orch --> PA1 : Fault 403: cross-tenant forbidden
+
+== Admin lista todos los peers ==
+Admin -> CLI : orch-cli peer-list --admin-token $ADMIN
+CLI -> Orch : peer.list(admin_token)
+Orch -> Orch : orch_check_admin_token
+Orch --> CLI : {peers: {peer_a1: {...}, peer_b1: {...}}}
+CLI --> Admin : lista completa (todos los tenants)
+
+note over Orch
+  **Mecanismos de aislamiento**:
+  - Cada peer tiene user_id en STATE["peers"]
+  - _enforce_tenant_for_peer valida ownership
+  - JWT contiene user_id + scopes
+  - Admin bypass con admin_token
+  - cross-tenant forbidden (403)
+end note
+
+@enduml

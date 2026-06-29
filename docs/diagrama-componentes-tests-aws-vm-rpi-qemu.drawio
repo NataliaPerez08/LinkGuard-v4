@@ -1,0 +1,164 @@
+<mxfile host="opencode" modified="2026-06-28T00:00:00.000Z">
+<diagram id="diagram-aws-vm-rpi-qemu" name="Componentes AWS + VM + RPi5 + QEMU">
+  <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" background="#0d1117">
+    <root>
+      <mxCell id="0"/>
+      <mxCell id="1" parent="0"/>
+
+      <!-- Title -->
+      <mxCell id="title" value="&lt;b&gt;Infraestructura de pruebas: AWS + VM + RPi5 + 1 QEMU&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;LinkGuard v2 — Testbed&lt;/font&gt;" style="text;html=1;strokeColor=none;fillColor=none;fontSize=16;fontColor=#58a6ff;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxGeometry x="300" y="10" width="600" height="50" as="geometry"/>
+      </mxCell>
+
+      <!-- Legend -->
+      <mxCell id="legend-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#161b22;strokeColor=#30363d;fontSize=10;fontColor=#c9d1d9;" vertex="1" parent="1">
+        <mxGeometry x="870" y="70" width="300" height="210" as="geometry"/>
+      </mxCell>
+      <mxCell id="legend-title" value="&lt;b&gt;Leyenda&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#79c0ff;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxGeometry x="870" y="72" width="300" height="20" as="geometry"/>
+      </mxCell>
+      <!-- Legend items -->
+      <mxCell id="legend-ec2" value="EC2 — Acceso SSH por llave (pem)" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#1f6feb33;strokeColor=#1f6feb;fontSize=9;fontColor=#58a6ff;rounded=1;" vertex="1" parent="1">
+        <mxGeometry x="885" y="97" width="90" height="24" as="geometry"/>
+      </mxCell>
+      <mxCell id="legend-orch" value="Orquestador — Hub WireGuard" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#23863633;strokeColor=#238636;fontSize=9;fontColor=#3fb950;rounded=1;" vertex="1" parent="1">
+        <mxGeometry x="885" y="127" width="90" height="24" as="geometry"/>
+      </mxCell>
+      <mxCell id="legend-terminal" value="Terminal — vía jump host (sshpass)" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#6e40c933;strokeColor=#6e40c9;fontSize=9;fontColor=#d2a8ff;rounded=1;" vertex="1" parent="1">
+        <mxGeometry x="885" y="157" width="90" height="24" as="geometry"/>
+      </mxCell>
+      <mxCell id="legend-qemu" value="QEMU — Alpine VM (sshpass local)" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#8b5cf633;strokeColor=#8b5cf6;fontSize=9;fontColor=#c4b5fd;rounded=1;" vertex="1" parent="1">
+        <mxGeometry x="885" y="187" width="90" height="24" as="geometry"/>
+      </mxCell>
+      <mxCell id="legend-local" value="Orquestador de pruebas (esta máquina)" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#f0883e33;strokeColor=#f0883e;fontSize=9;fontColor=#f0883e;rounded=1;" vertex="1" parent="1">
+        <mxGeometry x="885" y="217" width="90" height="24" as="geometry"/>
+      </mxCell>
+
+      <!-- === ORCHESTRATOR / HUB === -->
+      <mxCell id="orch-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#161b22;strokeColor=#238636;dashed=1;fontSize=10;fontColor=#c9d1d9;" vertex="1" parent="1">
+        <mxGeometry x="40" y="80" width="220" height="100" as="geometry"/>
+      </mxCell>
+      <mxCell id="orch" value="&lt;b&gt;Orquestador / Hub&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;34.193.139.170 (ecs-linkguard-orquestator)&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:8px;color:#3fb950&quot;&gt;Ubuntu — admin SSH key — wg-HUB (10.20.30.0/24)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23863633;strokeColor=#238636;fontSize=10;fontColor=#c9d1d9;arcSize=10;" vertex="1" parent="1">
+        <mxGeometry x="50" y="90" width="200" height="80" as="geometry"/>
+      </mxCell>
+
+      <!-- === CLOUD PEERS === -->
+      <mxCell id="cloud-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#161b22;strokeColor=#1f6feb;dashed=1;fontSize=10;fontColor=#c9d1d9;" vertex="1" parent="1">
+        <mxGeometry x="40" y="230" width="220" height="210" as="geometry"/>
+      </mxCell>
+      <mxCell id="cloud-label" value="&lt;b&gt;Peers Cloud (AWS EC2)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#58a6ff;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxGeometry x="40" y="232" width="220" height="18" as="geometry"/>
+      </mxCell>
+      <mxCell id="ec2-1" value="&lt;b&gt;ecs-linkguard-0001&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:8px&quot;&gt;98.87.229.24&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:7px;color:#58a6ff&quot;&gt;Amazon Linux — ec2-user&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1f6feb22;strokeColor=#1f6feb;fontSize=9;fontColor=#c9d1d9;arcSize=8;" vertex="1" parent="1">
+        <mxGeometry x="55" y="258" width="190" height="46" as="geometry"/>
+      </mxCell>
+      <mxCell id="ec2-2" value="&lt;b&gt;ecs-linkguard-0002&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:8px&quot;&gt;3.228.113.66&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:7px;color:#58a6ff&quot;&gt;Amazon Linux — ec2-user&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1f6feb22;strokeColor=#1f6feb;fontSize=9;fontColor=#c9d1d9;arcSize=8;" vertex="1" parent="1">
+        <mxGeometry x="55" y="312" width="190" height="46" as="geometry"/>
+      </mxCell>
+      <mxCell id="ec2-3" value="&lt;b&gt;ecs-linkguard-0003&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:8px&quot;&gt;54.210.49.136&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:7px;color:#58a6ff&quot;&gt;Ubuntu — ubuntu user&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1f6feb22;strokeColor=#1f6feb;fontSize=9;fontColor=#c9d1d9;arcSize=8;" vertex="1" parent="1">
+        <mxGeometry x="55" y="366" width="190" height="46" as="geometry"/>
+      </mxCell>
+
+      <!-- === TERMINAL PEERS (via jump) === -->
+      <mxCell id="terminal-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#161b22;strokeColor=#6e40c9;dashed=1;fontSize=10;fontColor=#c9d1d9;" vertex="1" parent="1">
+        <mxGeometry x="340" y="230" width="220" height="210" as="geometry"/>
+      </mxCell>
+      <mxCell id="terminal-label" value="&lt;b&gt;Peers Terminal (vía Jump)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#d2a8ff;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxGeometry x="340" y="232" width="220" height="18" as="geometry"/>
+      </mxCell>
+      <mxCell id="jump-host" value="&lt;b&gt;Jump Host&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:8px&quot;&gt;100.115.215.49 (root/atidesa15)&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:7px;color:#d2a8ff&quot;&gt;sshpass ProxyCommand&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6e40c922;strokeColor=#6e40c9;fontSize=9;fontColor=#c9d1d9;arcSize=8;" vertex="1" parent="1">
+        <mxGeometry x="355" y="258" width="190" height="42" as="geometry"/>
+      </mxCell>
+      <mxCell id="vm-40" value="&lt;b&gt;Alpine VM&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:8px&quot;&gt;172.20.0.40 (root)&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:7px;color:#d2a8ff&quot;&gt;openrc — peer-172-20-0-40&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6e40c922;strokeColor=#6e40c9;fontSize=9;fontColor=#c9d1d9;arcSize=8;" vertex="1" parent="1">
+        <mxGeometry x="355" y="312" width="190" height="42" as="geometry"/>
+      </mxCell>
+      <mxCell id="rpi5" value="&lt;b&gt;Raspberry Pi 5&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:8px&quot;&gt;172.20.0.7 (natalia)&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:7px;color:#d2a8ff&quot;&gt;systemd — peer-172-20-0-7&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6e40c922;strokeColor=#6e40c9;fontSize=9;fontColor=#c9d1d9;arcSize=8;" vertex="1" parent="1">
+        <mxGeometry x="355" y="366" width="190" height="42" as="geometry"/>
+      </mxCell>
+
+      <!-- === QEMU PEER === -->
+      <mxCell id="qemu-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#161b22;strokeColor=#8b5cf6;dashed=1;fontSize=10;fontColor=#c9d1d9;" vertex="1" parent="1">
+        <mxGeometry x="340" y="80" width="220" height="100" as="geometry"/>
+      </mxCell>
+      <mxCell id="qemu-1" value="&lt;b&gt;QEMU Alpine VM&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:8px&quot;&gt;192.168.100.10 (root/linkguard-test)&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:7px;color:#c4b5fd&quot;&gt;peer01 — openrc — tenant-a&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#8b5cf633;strokeColor=#8b5cf6;fontSize=10;fontColor=#c9d1d9;arcSize=10;" vertex="1" parent="1">
+        <mxGeometry x="350" y="90" width="200" height="80" as="geometry"/>
+      </mxCell>
+
+      <!-- === LOCAL (test orchestrator) === -->
+      <mxCell id="local" value="&lt;b&gt;Host de pruebas (local)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:8px&quot;&gt;Parrot — ejecuta scripts&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:7px;color:#f0883e&quot;&gt;collect-hostinfo.py / report_common.py&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0883e33;strokeColor=#f0883e;fontSize=10;fontColor=#c9d1d9;arcSize=10;" vertex="1" parent="1">
+        <mxGeometry x="50" y="490" width="190" height="70" as="geometry"/>
+      </mxCell>
+
+      <!-- === CONNECTORS === -->
+
+      <!-- Orch -> Cloud peers -->
+      <mxCell id="conn-orch-ec2-1" value="WireGuard (hub-spoke / hub-mesh / mesh)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#238636;strokeWidth=2;fontSize=8;fontColor=#3fb950;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="orch" target="ec2-1">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+      <mxCell id="conn-orch-ec2-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#238636;strokeWidth=2;fontSize=8;fontColor=#3fb950;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="orch" target="ec2-2">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+      <mxCell id="conn-orch-ec2-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#238636;strokeWidth=2;fontSize=8;fontColor=#3fb950;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="orch" target="ec2-3">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+
+      <!-- Orch -> QEMU -->
+      <mxCell id="conn-orch-qemu" value="WireGuard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8b5cf6;strokeWidth=2;fontSize=8;fontColor=#c4b5fd;" edge="1" parent="1" source="orch" target="qemu-1">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+
+      <!-- Orch -> Jump (terminal peers route through jump) -->
+      <mxCell id="conn-orch-jump" value="WireGuard (via NAT)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6e40c9;strokeWidth=2;fontSize=8;fontColor=#d2a8ff;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="orch" target="jump-host">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+
+      <!-- Jump -> VM40 -->
+      <mxCell id="conn-jump-vm40" value="SSH ProxyJump" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6e40c9;strokeWidth=1;fontSize=7;fontColor=#d2a8ff;dashed=1;" edge="1" parent="1" source="jump-host" target="vm-40">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+
+      <!-- Jump -> RPi5 -->
+      <mxCell id="conn-jump-rpi5" value="SSH ProxyJump" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6e40c9;strokeWidth=1;fontSize=7;fontColor=#d2a8ff;dashed=1;" edge="1" parent="1" source="jump-host" target="rpi5">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+
+      <!-- Local -> Orch -->
+      <mxCell id="conn-local-orch" value="SSH key + orch-cli" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#f0883e;strokeWidth=1.5;fontSize=8;fontColor=#f0883e;dashed=1;" edge="1" parent="1" source="local" target="orch">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+
+      <!-- Local -> Cloud -->
+      <mxCell id="conn-local-ec2" value="SSH key" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#f0883e;strokeWidth=1.5;fontSize=8;fontColor=#f0883e;dashed=1;" edge="1" parent="1" source="local" target="ec2-1">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+
+      <!-- Local -> QEMU -->
+      <mxCell id="conn-local-qemu" value="sshpass" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#f0883e;strokeWidth=1.5;fontSize=8;fontColor=#f0883e;dashed=1;" edge="1" parent="1" source="local" target="qemu-1">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+
+      <!-- Local -> Jump -->
+      <mxCell id="conn-local-jump" value="sshpass" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#f0883e;strokeWidth=1.5;fontSize=8;fontColor=#f0883e;dashed=1;" edge="1" parent="1" source="local" target="jump-host">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+
+      <!-- Access type labels -->
+      <mxCell id="label-ssh-key" value="&lt;i&gt;Acceso SSH por llave .pem&lt;/i&gt;" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontColor=#8b949e;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxGeometry x="40" y="465" width="220" height="16" as="geometry"/>
+      </mxCell>
+      <mxCell id="label-sshpass" value="&lt;i&gt;Acceso sshpass (password)&lt;/i&gt;" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontColor=#8b949e;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxGeometry x="340" y="465" width="220" height="16" as="geometry"/>
+      </mxCell>
+
+      <!-- Info banner -->
+      <mxCell id="info-banner" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#161b22;strokeColor=#30363d;fontSize=9;fontColor=#8b949e;" vertex="1" parent="1">
+        <mxGeometry x="40" y="580" width="520" height="80" as="geometry"/>
+      </mxCell>
+      <mxCell id="info-text" value="&lt;b&gt;Topologías probadas:&lt;/b&gt; hub-spoke (8 peers) ✓ | hub-mesh (fast) ✓ | mesh (fast: EC2-EC2 6/7) ✓&lt;br&gt;&lt;b&gt;Scripts:&lt;/b&gt; generate-report-{hubspoke,hubmesh,mesh}.py + collect-hostinfo.py&lt;br&gt;&lt;b&gt;Multi-tenant:&lt;/b&gt; admin + tenant-a (JWT via auth-login)&lt;br&gt;&lt;b&gt;Nota:&lt;/b&gt; peers terminal (VM+RPi5) detrás de NAT del jump host — mesh directo 0/7 (esperado)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontColor=#8b949e;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxGeometry x="50" y="582" width="500" height="76" as="geometry"/>
+      </mxCell>
+
+    </root>
+  </mxGraphModel>
+</diagram>
+</mxfile>

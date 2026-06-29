@@ -1,0 +1,34 @@
+@startuml topologia-hub-spoke
+title Topología Hub-Spoke: Flujo de Configuración y Datos
+
+participant "Peer A" as PA
+participant "Orchestrator" as Orch
+participant "Hub Agent" as Hub
+participant "Peer B" as PB
+
+note over PA, PB
+  **Hub-Spoke** (default)
+  Todos los peers se conectan solo al HUB.
+  No hay comunicación directa peer-to-peer.
+end note
+
+PA -> Orch : config.get_peer_config
+Orch --> PA : {peer: {pub: HUB, endpoint: HUB_IP, allowed_ips: CIDR}}
+PA -> PA : wg0.conf: solo bloque [Peer] para HUB
+
+PB -> Orch : config.get_peer_config
+Orch --> PB : {peer: {pub: HUB, endpoint: HUB_IP, allowed_ips: CIDR}}
+PB -> PB : wg0.conf: solo bloque [Peer] para HUB
+
+PA -> Hub : tráfico via wg-HUB
+Hub -> PB : reenvía via wg-HUB
+
+note over PA, PB
+  **Características**:
+  - 2 saltos (peer → HUB → peer)
+  - Funciona con cualquier NAT
+  - HUB es bottleneck y single point of failure
+  - Latencia alta
+end note
+
+@enduml

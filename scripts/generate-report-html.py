@@ -642,7 +642,15 @@ def _ttl_summary(ping_results: dict[str, dict[str, PingResult]]) -> str:
                 ttls.add(r.ttl)
     if not ttls:
         return "N/A"
-    return ", ".join(f"TTL={t}" + (" (P2P)" if t <= 64 else " (relay)") for t in sorted(ttls))
+    parts = []
+    for t in sorted(ttls):
+        if t == 64:
+            parts.append(f"TTL={t} (directo)")
+        elif t == 63:
+            parts.append(f"TTL={t} (relay 1 hop)")
+        else:
+            parts.append(f"TTL={t} (relay {64-t} hops)")
+    return ", ".join(parts)
 
 
 def render_html(timestamp: str, results: list[TopologyResult]) -> str:
@@ -741,7 +749,7 @@ def render_html(timestamp: str, results: list[TopologyResult]) -> str:
                 pr = r.ping_results.get(src_id, {}).get(dst_id)
                 if pr is None:
                     continue
-                ptype = _path_type(src_id, dst_id)
+                ptype = _path_type(src_id, dst_id, r.topology)
                 rtt = f'{pr.avg_ms:.1f}' if pr.avg_ms is not None else "—"
                 loss = f'{pr.loss_pct:.0f}%'
                 ttl = str(pr.ttl) if pr.ttl else "—"

@@ -720,15 +720,18 @@ def _rtt_cell(r: PingResult) -> str:
     return "\u2014"
 
 
-def _path_type(src_id: str, dst_id: str) -> str:
+def _path_type(src_id: str, dst_id: str, topology: str = "hub-spoke") -> str:
     st = _peer_type(src_id)
     dt = _peer_type(dst_id)
+    if topology == "hub-spoke":
+        return "Relay via hub"
+    if topology == "mesh":
+        if st == dt and st == "NUBE":
+            return "P2P"
+        return "Relay via hub"
+    # hub-mesh
     if st == dt and st == "NUBE":
         return "P2P"
-    if st == dt and st == "QEMU":
-        return "Relay via hub"
-    if st == "VM" or dt == "VM":
-        return "Relay via hub"
     return "Relay via hub"
 
 
@@ -740,7 +743,15 @@ def _ttl_summary(ping_results: dict[str, dict[str, PingResult]]) -> str:
                 ttls.add(r.ttl)
     if not ttls:
         return "N/A"
-    return ", ".join(f"TTL={t}" + (" (P2P)" if t <= 64 else " (relay)") for t in sorted(ttls))
+    parts = []
+    for t in sorted(ttls):
+        if t == 64:
+            parts.append(f"TTL={t} (directo)")
+        elif t == 63:
+            parts.append(f"TTL={t} (relay 1 hop)")
+        else:
+            parts.append(f"TTL={t} (relay {64-t} hops)")
+    return ", ".join(parts)
 
 
 def render_html(timestamp: str, results: list[TopologyResult]) -> str:
@@ -848,7 +859,7 @@ def render_html(timestamp: str, results: list[TopologyResult]) -> str:
                 pr = r.ping_results.get(src_id, {}).get(dst_id)
                 if pr is None:
                     continue
-                ptype = _path_type(src_id, dst_id)
+                ptype = _path_type(src_id, dst_id, r.topology)
                 rtt = f'{pr.avg_ms:.1f}' if pr.avg_ms is not None else "\u2014"
                 loss = f'{pr.loss_pct:.0f}%'
                 ttl = str(pr.ttl) if pr.ttl else "\u2014"

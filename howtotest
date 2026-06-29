@@ -1,0 +1,34 @@
+# Testbed actual
+# - Orquestador AWS: 34.193.139.170
+# - Peers cloud: 98.87.229.24, 3.228.113.66, 54.210.49.136
+# - Terminal detras de jump-host: 172.20.0.40 via 100.115.215.49
+# - RPi5 detras de jump-host: 172.20.0.7 via 100.115.215.49
+# - Peer local: parrot
+
+# 1. Verifica que el orquestador AWS responda
+curl -s http://34.193.139.170:8000/RPC2
+
+# 2. Ejecuta una topologia desde parrot
+# Usa --skip-throughput para saltar iperf3 mientras validas registro/conectividad.
+
+# ── HUB-SPOKE ──
+sudo python3 tests-parrot/generate-report-hubspoke.py --skip-throughput
+
+# ── HUB-MESH ──
+sudo python3 tests-parrot/generate-report-hubmesh.py --skip-throughput
+
+# ── MESH ──
+sudo python3 tests-parrot/generate-report-mesh.py --skip-throughput
+
+Notas:
+- Cada corrida emite un user token nuevo para tenant-a e invalida el anterior.
+- Los scripts reescriben /etc/linkguard/peer.env en cada peer y limpian el estado previo.
+- Los reportes HTML se generan en docs/reports/parrot/<topologia>/<YYYY-MM-DD>/reporte-*.html.
+- El terminal (172.20.0.40) y la RPi5 (172.20.0.7) dependen del jump-host 100.115.215.49.
+- Si solo se registran los peers cloud, revisa conectividad desde el jump-host/red local hacia 34.193.139.170:8000.
+- El peer local parrot puede fallar intermitentemente con xml.parsers.expat.ExpatError durante heartbeat/register.
+- Si necesitas throughput real, quita --skip-throughput.
+
+# Si el orquestador AWS se cae y necesitas levantarlo de nuevo manualmente:
+ssh -i /home/natalia/Downloads/linkguard-scripts/linkguard-key.pem -o StrictHostKeyChecking=no admin@34.193.139.170 \
+  "sudo sh -c 'set -a; . /etc/linkguard/secrets; set +a; export HUB_ENDPOINT=34.193.139.170:51820; nohup python3 /opt/linkguard-orchestrator/hub-agent.py >/var/log/hub-agent.log 2>&1 & nohup python3 /opt/linkguard-orchestrator/orchestrator.py >/var/log/orch.log 2>&1 &'"

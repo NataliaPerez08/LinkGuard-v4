@@ -1,0 +1,51 @@
+@startuml plano-control-datos-mesh
+title Mesh: Planos de Control y Datos
+
+skinparam backgroundColor #FEFEFE
+
+rectangle "Plano de Control" as PC #E3F2FD {
+    node "Orchestrator\n:8000" as Orch
+    node "Peer A" as PA
+    node "Peer B" as PB
+    node "Peer C" as PC2
+}
+
+rectangle "Plano de Datos" as PD #E8F5E9 {
+    node "Peer A\nwg0" as WGA
+    node "Peer B\nwg0" as WGB
+    node "Peer C\nwg0" as WGC
+}
+
+' Control plane
+PA -up-> Orch : register/heartbeat
+PB -up-> Orch : register/heartbeat
+PC2 -up-> Orch : register/heartbeat
+
+' Data plane - full mesh
+WGA <-right-> WGB : WireGuard directo
+WGB <-right-> WGC : WireGuard directo
+WGA <-left-> WGC : WireGuard directo
+
+note right of WGA
+  **Data Flow**
+  Peer ↔ Peer directo
+  1 salto, baja latencia
+  Sin bottleneck
+  O(n²) conexiones
+end note
+
+note bottom of Orch
+  **Control Flow**
+  - Entrega lista de peers vivos
+  - mesh_peers_hash para detectar cambios
+  - No transporta datos
+end note
+
+note bottom of WGC
+  **Limitación NAT**
+  Si ambos peers están detrás
+  de NAT simétrico, no pueden
+  establecer handshake directo
+end note
+
+@enduml

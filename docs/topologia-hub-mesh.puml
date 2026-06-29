@@ -1,0 +1,50 @@
+@startuml topologia-hub-mesh
+title Topología Hub-Mesh: Flujo de Configuración y Datos
+
+participant "Peer A" as PA
+participant "Orchestrator" as Orch
+participant "Hub Agent" as Hub
+participant "Peer B" as PB
+
+note over PA, PB
+  **Hub-Mesh** (híbrida)
+  HUB como bootstrap + relay de fallback.
+  Peers intentan conexión directa; si falla, relay via HUB.
+end note
+
+PA -> Orch : config.get_peer_config
+Orch --> PA : {peer: HUB, direct_peers: [B]}
+note right of PA
+  wg0.conf genera:
+  - [Peer] para HUB (relay fallback)
+  - [Peer] para B (directo)
+end note
+
+PB -> Orch : config.get_peer_config
+Orch --> PB : {peer: HUB, direct_peers: [A]}
+note right of PB
+  wg0.conf genera:
+  - [Peer] para HUB (relay fallback)
+  - [Peer] para A (directo)
+end note
+
+PA -> PA : probe_direct_peers()
+PA -> Orch : peer.report_reachability("A", "B", reachable=true/false)
+
+alt reachable == true
+    PA -> PB : tráfico directo WireGuard
+else reachable == false
+    PA -> Hub : tráfico via wg-HUB (relay)
+    Hub -> PB : reenvía via wg-HUB
+end
+
+note over PA, PB
+  **Características**:
+  - 1-2 saltos (directo o via HUB)
+  - Intenta directo primero (baja latencia)
+  - Si NAT bloquea, relay via HUB (funciona siempre)
+  - probe_direct_peers monitorea handshakes
+  - Orchestrator clasifica peers: direct vs relay_only
+end note
+
+@enduml

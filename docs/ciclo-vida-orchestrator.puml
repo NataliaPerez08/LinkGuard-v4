@@ -1,0 +1,39 @@
+@startuml ciclo-vida-orchestrator
+title Ciclo de vida del Orchestrator
+
+skinparam state {
+    BackgroundColor<<start>> #LightGreen
+    BackgroundColor<<stop>> #LightCoral
+    BackgroundColor<<warn>> #LightYellow
+}
+
+state "Arrancando" as Arrancando <<start>>
+state "Validando" as Validando
+state "Cargando Estado" as Cargando
+state "Listo" as Listo {
+    state "Sirviendo XML-RPC" as RPC
+    state "Backup Loop" as Backup
+    RPC --> Backup : cada 300s
+    Backup --> RPC
+}
+state "Apagando" as Apagando <<stop>>
+
+[*] --> Arrancando : systemd start
+
+Arrancando --> Validando : check_dependencies()
+Validando --> Cargando : validate_tokens_at_startup()
+Validando --> Arrancando <<warn>> : tokens inseguros / faltantes
+
+Cargando --> Listo : state.load_state()
+Cargando --> Apagando <<warn>> : fallo carga
+
+Listo --> Apagando : SIGINT / systemctl stop
+Apagando --> [*] : state.persist()\nserver_close()
+
+note right of Listo
+  **ThreadingMixIn**: un thread por RPC
+  **Backup loop**: thread aparte cada BACKUP_INTERVAL_SEC (300s)
+  **31 handlers XML-RPC** registrados en /RPC2
+end note
+
+@enduml

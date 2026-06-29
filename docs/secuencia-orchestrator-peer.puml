@@ -1,0 +1,65 @@
+@startuml secuencia-orchestrator-peer
+title Secuencia completa: Orchestrator ↔ Peer
+
+participant "Peer\n(wg-auto-register)" as P
+participant "Orchestrator\n(/RPC2)" as O
+participant "Hub Agent\n(:9000)" as H
+participant "state.json" as S
+
+== Arranque del Peer (cmd_register) ==
+P -> P : gen_keys_if_needed()\n(priv + pub en /etc/wireguard/)
+P -> O : auth.login(user_id, peer_id, ORCH_TOKEN, scopes)
+O -> O : _xml_login\nvalida user_token, genera JWT
+O --> P : {jwt, expires_at}
+
+P -> O : peer.register(peer_id, pub_key, endpoint, tags, metadata, jwt)
+O -> O : _xml_peer_register\n_require_peer_jwt → peer:write
+O -> O : rpc_peer_register\n¿peer existe? → update / create
+O -> S : persist STATE
+O -> H : _hub_apply_peer_allowed_ips
+H -> H : wg set wg-HUB peer <pub> allowed-ips <ip>/32
+H --> O : ok
+O --> P : {peer_id, wg_ip, config_version}
+
+P -> P : apply_config()\nfetch config.get_peer_config\n→ wg0.conf
+P -> P : wg syncconf wg0 <(wg-quick strip wg0)
+
+== Daemon loop (cmd_run) ==
+loop cada 25s (WG_HEARTBEAT_INTERVAL)
+    P -> P : ensure_jwt_session()\nrefresh si expira en <60s
+    P -> P : detect_nat_type()\ncache 300s
+    P -> O : peer.heartbeat(peer_id, {ts, wg, endpoint, nat_type}, jwt)
+    O -> O : _xml_peer_heartbeat\n_require_peer_jwt → peer:write
+    O -> S : last_heartbeat = now\nendpoint = remote_addr_override
+    O -> H : _hub_apply_peer_allowed_ips\n(si endpoint cambió)
+    O --> P : {desired_config_version, mesh_peers_hash}
+
+    alt desired_version != current_version
+        P -> O : config.get_peer_config(peer_id, jwt)
+        O --> P : {interface, peer, mesh_peers, meta}
+        P -> P : apply_config()\nwg syncconf
+        P -> P : save config_version
+    end
+
+    opt topology == "hub-mesh"
+        P -> P : probe_direct_peers()\ntest handshakes con peers directos
+        P -> O : peer.report_reachability(peer_id, target, reachable)
+    end
+end
+
+== Rotación de clave ==
+P -> P : rotate_keys()\nnueva priv + pub
+P -> O : peer.rotate_key(peer_id, new_pub, jwt)
+O -> O : actualiza public_key\nbump_config_version
+O -> H : _hub_apply_peer_allowed_ips
+O --> P : {rotated: true}
+P -> P : apply_config()
+
+== Desregistro ==
+P -> O : peer.unregister(peer_id, jwt)
+O -> O : rpc_peer_unregister\ndel STATE["peers"][peer_id]
+O -> S : persist
+O -> H : hub_remove_peer
+O --> P : {unregistered: true}
+
+@enduml

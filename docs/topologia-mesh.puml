@@ -1,0 +1,36 @@
+@startuml topologia-mesh
+title Topología Mesh: Flujo de Configuración y Datos
+
+participant "Peer A" as PA
+participant "Orchestrator" as Orch
+participant "Hub Agent" as Hub
+participant "Peer B" as PB
+
+note over PA, PB
+  **Mesh** (full mesh)
+  Todos los peers se conectan directamente entre sí.
+  Sin relay por HUB (full mesh).
+end note
+
+PA -> Orch : config.get_peer_config
+Orch --> PA : {mesh_peers: [{peer_id: "B", pub: PB_PUB, endpoint: PB_EP, tunnel_ip: 10.20.30.2, alive: true}]}
+PA -> PA : wg0.conf: bloque [Peer] para cada mesh_peer
+
+PB -> Orch : config.get_peer_config
+Orch --> PB : {mesh_peers: [{peer_id: "A", pub: PA_PUB, endpoint: PA_EP, tunnel_ip: 10.20.30.1, alive: true}]}
+PB -> PB : wg0.conf: bloque [Peer] para cada mesh_peer
+
+PA -> PB : tráfico directo WireGuard
+PB -> PA : tráfico directo WireGuard
+
+note over PA, PB
+  **Características**:
+  - 1 salto (peer → peer directo)
+  - Baja latencia, sin bottleneck
+  - O(n²) conexiones
+  - **Problema NAT**: si ambos están detrás de NAT simétrico,
+    no pueden establecer handshake directo
+  - mesh_peers_hash cambia cuando peers aparecen/desaparecen
+end note
+
+@enduml

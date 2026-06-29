@@ -1,0 +1,65 @@
+@startuml
+!theme plain
+skinparam backgroundColor #fafafa
+skinparam participant {
+  BorderColor #1565c0
+  BackgroundColor #e3f2fd
+}
+skinparam actor {
+  BorderColor #1565c0
+  BackgroundColor #c8e6c9
+}
+
+title Flujo E2E Full-Stack (Mockeado)\n14 tests · subprocess mockeado, XML-RPC real in-process
+
+actor "Cliente Web" as CLI
+participant "Orquestador\n(XML-RPC)" as ORCH
+participant "Ordenador DB\n(sqlite)" as DB
+participant "Hub-Agent\n(mock subprocess)" as HUB
+participant "Peer wg-auto\n(mock subprocess)" as PEER
+participant "WireGuard\n(mock)" as WG
+
+== Registro de Tenant ==
+CLI -> ORCH : register_tenant("admin", token)
+ORCH -> DB : INSERT tenant
+DB --> ORCH : ok
+ORCH --> CLI : {status: "ok", tenant_id: 1}
+
+== Creación de Red ==
+CLI -> ORCH : create_network("default")
+ORCH -> DB : INSERT network + default subnet
+ORCH --> CLI : {net_id: "n-xxx", subnet: "10.20.30.0/24"}
+
+== Registro de Peers ==
+CLI -> ORCH : register_peer(qemu-orq, pubkey, user_id=qemu-orq)
+ORCH -> DB : INSERT peer
+ORCH --> CLI : {peer_id: "peer01", tunnel_ip: "10.20.30.7"}
+
+== Descarga de Config ==
+PEER -> ORCH : get_config(peer01)
+ORCH -> DB : SELECT network, peers
+ORCH --> PEER : {interface, list[peers], topology}
+
+== WireGuard Up (mock) ==
+PEER -> HUB : apply_config(wg0.conf)
+HUB -> WG : wg-quick up wg0 (mock)
+WG --> HUB : ok
+HUB --> PEER : ok
+
+== Heartbeat ==
+PEER -> ORCH : heartbeat(peer01, tx_bytes, rx_bytes...)
+ORCH -> DB : UPDATE peer
+ORCH --> PEER : ok
+
+== Topología Hub-Spoke ==
+CLI -> ORCH : set_topology("default", "hub-spoke")
+ORCH -> DB : UPDATE network topology
+ORCH --> CLI : ok
+
+== Handshake vía Hub ==
+PEER -> ORCH : get_config(peer01)
+ORCH --> PEER : {interface, hub pubkey, peers}
+PEER -> HUB : apply_config (spoke: point to hub)
+HUB -> WG : wg-quick up (mock)
+
+@enduml

@@ -2,6 +2,7 @@
 Endpoints RPC de gestion de peers WireGuard.
 """
 
+import hashlib
 import json
 import secrets
 from typing import Any, Dict
@@ -285,7 +286,9 @@ def rpc_peer_heartbeat(params: Dict[str, Any]) -> Dict[str, Any]:
     elif topology == "hub-mesh":
         from .endpoints_config import _classify_peers_for_hub_mesh
         classified = _classify_peers_for_hub_mesh(peer_id, network_id)
-        response["hub_mesh_peers_hash"] = json.dumps(classified, sort_keys=True)
+        response["hub_mesh_peers_hash"] = hashlib.sha256(
+            json.dumps(classified["direct"], sort_keys=True).encode()
+        ).hexdigest()
     return response
 
 

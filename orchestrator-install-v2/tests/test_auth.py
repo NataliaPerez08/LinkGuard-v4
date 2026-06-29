@@ -175,3 +175,146 @@ class TestPeerOwner:
         from orchestrator.auth import _peer_owner_from_metadata
         assert _peer_owner_from_metadata(None) == "default"
         assert _peer_owner_from_metadata({}) == "default"
+
+
+# ──────────────────────── _read_jwt_secret ────────────────────────
+
+
+class TestReadJwtSecret:
+    def test_reads_secret(self, tmp_path, monkeypatch):
+        secret_file = tmp_path / "jwt_secret"
+        secret_file.write_text("my-secret-key-min-32-chars-xxxxxxxx")
+        monkeypatch.setenv("JWT_SECRET_PATH", str(secret_file))
+        from importlib import reload
+        import orchestrator.config as cfg
+        reload(cfg)
+        from orchestrator.auth import _read_jwt_secret
+        s = _read_jwt_secret()
+        assert s == "my-secret-key-min-32-chars-xxxxxxxx"
+
+    def test_caches_on_repeat(self, tmp_path, monkeypatch):
+        secret_file = tmp_path / "jwt_secret"
+        secret_file.write_text("my-secret-key-min-32-chars-xxxxxxxx")
+        monkeypatch.setenv("JWT_SECRET_PATH", str(secret_file))
+        from importlib import reload
+        import orchestrator.config as cfg
+        reload(cfg)
+        from orchestrator.auth import _read_jwt_secret, _JWT_SECRET_HASH
+        s1 = _read_jwt_secret()
+        old_hash = _JWT_SECRET_HASH
+        s2 = _read_jwt_secret()
+        assert s1 == s2
+        assert _JWT_SECRET_HASH == old_hash
+
+    def test_detects_change(self, tmp_path, monkeypatch):
+        secret_file = tmp_path / "jwt_secret"
+        secret_file.write_text("initial-secret-min-32-chars-xxxxx")
+        monkeypatch.setenv("JWT_SECRET_PATH", str(secret_file))
+        from importlib import reload
+        import orchestrator.config as cfg
+        reload(cfg)
+        from orchestrator.auth import _read_jwt_secret
+        _read_jwt_secret()
+        secret_file.write_text("changed-secret-min-32-chars-xxxxxxx")
+        s2 = _read_jwt_secret()
+        assert s2 == "changed-secret-min-32-chars-xxxxxxx"
+
+    def test_empty_raises(self, tmp_path, monkeypatch):
+        secret_file = tmp_path / "jwt_secret"
+        secret_file.write_text("")
+        monkeypatch.setenv("JWT_SECRET_PATH", str(secret_file))
+        from importlib import reload
+        import orchestrator.config as cfg
+        reload(cfg)
+        from orchestrator.auth import _read_jwt_secret
+        with pytest.raises(RuntimeError, match="vacio"):
+            _read_jwt_secret()
+
+    def test_missing_raises(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("JWT_SECRET_PATH", str(tmp_path / "no-such-file"))
+        from importlib import reload
+        import orchestrator.config as cfg
+        reload(cfg)
+        from orchestrator.auth import _read_jwt_secret
+        with pytest.raises(RuntimeError, match="no existe"):
+            _read_jwt_secret()
+
+
+# ──────────────────────── _enforce_tenant_for_peer ────────────────────────
+
+
+class TestEnforceTenantForPeer:
+    def test_owner_match(self, sample_state):
+        from orchestrator.auth import _enforce_tenant_for_peer
+        _enforce_tenant_for_peer("alice", "p1")
+
+    def test_cross_tenant(self, sample_state):
+        from orchestrator.auth import _enforce_tenant_for_peer
+        with pytest.raises(PermissionError, match="cross-tenant"):
+            _enforce_tenant_for_peer("other-user", "p1")
+
+    def test_missing_peer(self, sample_state):
+        from orchestrator.auth import _enforce_tenant_for_peer
+        with pytest.raises(KeyError):
+            _enforce_tenant_for_peer("alice", "nonexistent")
+
+
+# ──────────────────────── _filter_events_for_tenant ────────────────────────
+
+
+class TestFilterEventsForTenant:
+    def test_include_own_peer_events(self, init_state):
+        from orchestrator import state
+        from orchestrator.auth import _filter_events_for_tenant
+        state.STATE["peers"]["p1"] = {"user_id": "alice"}
+        state.STATE["events"] = [
+            {"kind": "peer_created", "detail": {"peer_id": "p1"}},
+        ]
+        filtered = _filter_events_for_tenant("alice")
+        assert len(filtered) == 1
+
+    def test_exclude_other_peer_events(self, init_state):
+        from orchestrator import state
+        from orchestrator.auth import _filter_events_for_tenant
+        state.STATE["peers"]["p1"] = {"user_id": "alice"}
+        state.STATE["peers"]["p2"] = {"user_id": "other"}
+        state.STATE["events"] = [
+            {"kind": "peer_created", "detail": {"peer_id": "p2"}},
+        ]
+        filtered = _filter_events_for_tenant("alice")
+        assert len(filtered) == 0
+
+    def test_filter_by_network(self, init_state):
+        from orchestrator import state
+        from orchestrator.auth import _filter_events_for_tenant
+        state.STATE["networks"]["n1"] = {"user_id": "alice"}
+        state.STATE["networks"]["n2"] = {"user_id": "other"}
+        state.STATE["events"] = [
+            {"kind": "network_created", "detail": {"network_id": "n2"}},
+        ]
+        filtered = _filter_events_for_tenant("alice")
+        assert len(filtered) == 0
+
+    def test_filter_by_network_include(self, init_state):
+        from orchestrator import state
+        from orchestrator.auth import _filter_events_for_tenant
+        state.STATE["networks"]["n1"] = {"user_id": "alice"}
+        state.STATE["events"] = [
+            {"kind": "network_created", "detail": {"network_id": "n1"}},
+        ]
+        filtered = _filter_events_for_tenant("alice")
+        assert len(filtered) == 1
+
+    def test_empty_events(self, init_state):
+        from orchestrator.auth import _filter_events_for_tenant
+        filtered = _filter_events_for_tenant("alice")
+        assert filtered == []
+
+    def test_missing_detail_graceful(self, init_state):
+        from orchestrator import state
+        from orchestrator.auth import _filter_events_for_tenant
+        state.STATE["events"] = [
+            {"kind": "unknown", "detail": None},
+        ]
+        filtered = _filter_events_for_tenant("alice")
+        assert len(filtered) == 1

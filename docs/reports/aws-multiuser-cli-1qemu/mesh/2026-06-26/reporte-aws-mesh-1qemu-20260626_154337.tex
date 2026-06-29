@@ -1,0 +1,786 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{listings}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{colortbl}
+
+\geometry{margin=1.2cm}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  showstringspaces=false,
+  frame=single,
+  backgroundcolor=\color{gray!5}
+}
+
+\definecolor{okgreen}{RGB}{63,185,80}
+\definecolor{warnyellow}{RGB}{210,153,34}
+\definecolor{failred}{RGB}{248,81,73}
+\definecolor{headerblue}{RGB}{121,192,255}
+\definecolor{tagblue}{RGB}{88,166,255}
+\definecolor{taggreen}{RGB}{63,185,80}
+\definecolor{tagpurple}{RGB}{210,168,255}
+
+\newcommand{\ok}[1]{\textcolor{okgreen}{\textbf{#1}}}
+\newcommand{\warn}[1]{\textcolor{warnyellow}{\textbf{#1}}}
+\newcommand{\fail}[1]{\textcolor{failred}{\textbf{#1}}}
+\newcommand{\partialcmd}[1]{\textcolor{warnyellow}{\textbf{#1}}}
+
+\title{Reporte Mesh AWS Multiusuario CLI — LinkGuard v4 (AWS + VM + RPi5 + 1 QEMU)}
+\author{LinkGuard v2}
+\date{2026-06-26 15:43:37 CST}
+
+\begin{document}
+\maketitle
+
+\section{Inventario de peers}
+\begin{longtable}{|c|c|c|c|c|}
+\hline
+Peer & IP tunel & Endpoint & NAT & Tipo \\ \hline
+119 aws (54.210.49.136) & 10.20.30.2 & 54.210.49.136:51820 & symmetric & NUBE \\ \hline
+40 vm (172.20.0.40) & 10.20.30.5 & 201.137.117.82:39808 & symmetric & VM \\ \hline
+7 rpi5 (172.20.0.7) & 10.20.30.6 & 201.137.117.82:58552 & symmetric & RPi5 \\ \hline
+143 aws (98.87.229.24) & 10.20.30.4 & 98.87.229.24:51820 & symmetric & NUBE \\ \hline
+76 aws (3.228.113.66) & 10.20.30.3 & 3.228.113.66:51820 & symmetric & NUBE \\ \hline
+peer01 (QEMU) & 10.20.30.7 & 192.168.100.10:51820 &  & QEMU \\ \hline
+\end{longtable}
+
+Hub:  \texttt{34.193.139.170:51820} 34.193.139.170:51820  — IP tunel:  \texttt{10.20.30.1} 10.20.30.1  | SSH nubes: llave  \texttt{linkguard-key.pem} linkguard-key.pem  | VM/RPi5 via jump  \texttt{root@100.115.215.49} root@100.115.215.49\\
+
+\section{Topologia:mesh}
+Ping OK: 19/30 — TTLs: TTL=64 (directo), TTL=127 (relay -63 hops)\\
+
+\subsection{Matriz de conectividad}
+\begin{longtable}{|c|c|c|c|c|c|c|}
+\hline
+Origen \textbackslash{} Destino & 119 aws (54.210.49.136)10.20.30.2 & 40 vm (172.20.0.40)10.20.30.5 & 7 rpi5 (172.20.0.7)10.20.30.6 & 143 aws (98.87.229.24)10.20.30.4 & 76 aws (3.228.113.66)10.20.30.3 & peer01 (QEMU)10.20.30.7 \\ \hline
+119 aws (54.210.49.136)10.20.30.2 & -- & ⚠ PARCIAL-- & ✗ FALLO-- & OK0.6 ms & OK0.9 ms & ⚠ LENTO84.0 ms \\ \hline
+40 vm (172.20.0.40)10.20.30.5 & ⚠ LENTO87.3 ms & -- & ✗ FALLO-- & ⚠ LENTO90.6 ms & ⚠ LENTO89.0 ms & ✗ FALLO-- \\ \hline
+7 rpi5 (172.20.0.7)10.20.30.6 & ⚠ LENTO91.3 ms & ✗ FALLO-- & -- & ⚠ LENTO91.3 ms & ⚠ LENTO92.9 ms & ✗ FALLO-- \\ \hline
+143 aws (98.87.229.24)10.20.30.4 & OK0.6 ms & ✗ FALLO-- & ✗ FALLO-- & -- & OK0.6 ms & ⚠ LENTO122.2 ms \\ \hline
+76 aws (3.228.113.66)10.20.30.3 & OK0.6 ms & ⚠ LENTO97.3 ms & ⚠ PARCIAL-- & OK0.6 ms & -- & ⚠ LENTO118.8 ms \\ \hline
+peer01 (QEMU)10.20.30.7 & ⚠ LENTO172.4 ms & ✗ FALLO-- & ✗ FALLO-- & ⚠ LENTO133.7 ms & ⚠ LENTO149.5 ms & -- \\ \hline
+\end{longtable}
+
+\subsection{Detalle por par}
+\begin{longtable}{|c|c|c|c|c|c|c|}
+\hline
+Origen & Destino & Tipo & RTT (ms) & Perdida & TTL & Estado \\ \hline
+119 aws (54.210.49.136)10.20.30.2 & 40 vm (172.20.0.40)10.20.30.5 & Relay via hub & 170.2 & 40\textbackslash{}% & 64 & ⚠ PARCIAL \\ \hline
+119 aws (54.210.49.136)10.20.30.2 & 7 rpi5 (172.20.0.7)10.20.30.6 & Relay via hub & 92.8 & 80\textbackslash{}% & 64 & ✗ FALLO \\ \hline
+119 aws (54.210.49.136)10.20.30.2 & 143 aws (98.87.229.24)10.20.30.4 & P2P & 0.6 & 0\textbackslash{}% & 64 & OK \\ \hline
+119 aws (54.210.49.136)10.20.30.2 & 76 aws (3.228.113.66)10.20.30.3 & P2P & 0.9 & 0\textbackslash{}% & 127 & OK \\ \hline
+119 aws (54.210.49.136)10.20.30.2 & peer01 (QEMU)10.20.30.7 & Relay via hub & 84.0 & 0\textbackslash{}% & 64 & ⚠ LENTO \\ \hline
+40 vm (172.20.0.40)10.20.30.5 & 119 aws (54.210.49.136)10.20.30.2 & Relay via hub & 87.3 & 0\textbackslash{}% & 64 & ⚠ LENTO \\ \hline
+40 vm (172.20.0.40)10.20.30.5 & 7 rpi5 (172.20.0.7)10.20.30.6 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+40 vm (172.20.0.40)10.20.30.5 & 143 aws (98.87.229.24)10.20.30.4 & Relay via hub & 90.6 & 0\textbackslash{}% & 64 & ⚠ LENTO \\ \hline
+40 vm (172.20.0.40)10.20.30.5 & 76 aws (3.228.113.66)10.20.30.3 & Relay via hub & 89.0 & 0\textbackslash{}% & 127 & ⚠ LENTO \\ \hline
+40 vm (172.20.0.40)10.20.30.5 & peer01 (QEMU)10.20.30.7 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+7 rpi5 (172.20.0.7)10.20.30.6 & 119 aws (54.210.49.136)10.20.30.2 & Relay via hub & 91.3 & 0\textbackslash{}% & 64 & ⚠ LENTO \\ \hline
+7 rpi5 (172.20.0.7)10.20.30.6 & 40 vm (172.20.0.40)10.20.30.5 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+7 rpi5 (172.20.0.7)10.20.30.6 & 143 aws (98.87.229.24)10.20.30.4 & Relay via hub & 91.3 & 0\textbackslash{}% & 64 & ⚠ LENTO \\ \hline
+7 rpi5 (172.20.0.7)10.20.30.6 & 76 aws (3.228.113.66)10.20.30.3 & Relay via hub & 92.9 & 0\textbackslash{}% & 127 & ⚠ LENTO \\ \hline
+7 rpi5 (172.20.0.7)10.20.30.6 & peer01 (QEMU)10.20.30.7 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+143 aws (98.87.229.24)10.20.30.4 & 119 aws (54.210.49.136)10.20.30.2 & P2P & 0.6 & 0\textbackslash{}% & 64 & OK \\ \hline
+143 aws (98.87.229.24)10.20.30.4 & 40 vm (172.20.0.40)10.20.30.5 & Relay via hub & 147.1 & 80\textbackslash{}% & 64 & ✗ FALLO \\ \hline
+143 aws (98.87.229.24)10.20.30.4 & 7 rpi5 (172.20.0.7)10.20.30.6 & Relay via hub & 87.9 & 80\textbackslash{}% & 64 & ✗ FALLO \\ \hline
+143 aws (98.87.229.24)10.20.30.4 & 76 aws (3.228.113.66)10.20.30.3 & P2P & 0.6 & 0\textbackslash{}% & 127 & OK \\ \hline
+143 aws (98.87.229.24)10.20.30.4 & peer01 (QEMU)10.20.30.7 & Relay via hub & 122.2 & 0\textbackslash{}% & 64 & ⚠ LENTO \\ \hline
+76 aws (3.228.113.66)10.20.30.3 & 119 aws (54.210.49.136)10.20.30.2 & P2P & 0.6 & 0\textbackslash{}% & 64 & OK \\ \hline
+76 aws (3.228.113.66)10.20.30.3 & 40 vm (172.20.0.40)10.20.30.5 & Relay via hub & 97.3 & 0\textbackslash{}% & 64 & ⚠ LENTO \\ \hline
+76 aws (3.228.113.66)10.20.30.3 & 7 rpi5 (172.20.0.7)10.20.30.6 & Relay via hub & 91.4 & 40\textbackslash{}% & 64 & ⚠ PARCIAL \\ \hline
+76 aws (3.228.113.66)10.20.30.3 & 143 aws (98.87.229.24)10.20.30.4 & P2P & 0.6 & 0\textbackslash{}% & 64 & OK \\ \hline
+76 aws (3.228.113.66)10.20.30.3 & peer01 (QEMU)10.20.30.7 & Relay via hub & 118.8 & 0\textbackslash{}% & 64 & ⚠ LENTO \\ \hline
+peer01 (QEMU)10.20.30.7 & 119 aws (54.210.49.136)10.20.30.2 & Relay via hub & 172.4 & 0\textbackslash{}% & 64 & ⚠ LENTO \\ \hline
+peer01 (QEMU)10.20.30.7 & 40 vm (172.20.0.40)10.20.30.5 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+peer01 (QEMU)10.20.30.7 & 7 rpi5 (172.20.0.7)10.20.30.6 & Relay via hub & -- & 100\textbackslash{}% & -- & ✗ FALLO \\ \hline
+peer01 (QEMU)10.20.30.7 & 143 aws (98.87.229.24)10.20.30.4 & Relay via hub & 133.7 & 0\textbackslash{}% & 64 & ⚠ LENTO \\ \hline
+peer01 (QEMU)10.20.30.7 & 76 aws (3.228.113.66)10.20.30.3 & Relay via hub & 149.5 & 0\textbackslash{}% & 127 & ⚠ LENTO \\ \hline
+\end{longtable}
+
+\subsection{Throughput}
+\begin{longtable}{|c|c|c|c|c|}
+\hline
+Tipo & Cliente & Velocidad & Tamanio & Estado \\ \hline
+NUBE & peer-34-207-174-76 & 1337.34 Mbps & 8 MB & OK \\ \hline
+NUBE & peer-184-72-71-143 & 1677.72 Mbps & 8 MB & OK \\ \hline
+\end{longtable}
+
+\subsection{Configuracion WireGuard capturada}
+\subsubsection*{Orquestador (wg-HUB)}
+\begin{lstlisting}
+interface: wg-HUB
+  public key: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  private key: (hidden)
+  listening port: 51820
+
+peer: uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+  endpoint: 110.238.90.22:32645
+  allowed ips: 10.20.30.7/32
+  latest handshake: 8 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+  endpoint: 201.137.117.82:58552
+  allowed ips: 10.20.30.6/32
+  latest handshake: 16 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+  endpoint: 201.137.117.82:39808
+  allowed ips: 10.20.30.5/32
+  latest handshake: 19 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+  endpoint: 98.87.229.24:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 22 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+  endpoint: 3.228.113.66:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 25 seconds ago
+  transfer: 180 B received, 92 B sent
+
+peer: 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+  endpoint: 54.210.49.136:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 28 seconds ago
+  transfer: 212 B received, 92 B sent
+
+\end{lstlisting}
+
+\subsubsection*{Orquestador config (wg-HUB)}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = sI0982HQIljPq8jyswqCzckmzfYbtv0GQlgmPxwtsFs=
+
+[Peer]
+PublicKey = 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 54.210.49.136:51820
+
+[Peer]
+PublicKey = mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 3.228.113.66:51820
+
+[Peer]
+PublicKey = gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 98.87.229.24:51820
+
+[Peer]
+PublicKey = pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 201.137.117.82:39808
+
+[Peer]
+PublicKey = JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 201.137.117.82:58552
+
+[Peer]
+PublicKey = uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+AllowedIPs = 10.20.30.7/32
+Endpoint = 110.238.90.22:32645
+
+\end{lstlisting}
+
+\subsubsection*{119 aws (54.210.49.136) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+  private key: (hidden)
+  listening port: 51820
+
+peer: pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+  endpoint: 201.137.117.82:52204
+  allowed ips: 10.20.30.5/32
+  latest handshake: 1 second ago
+  transfer: 180 B received, 272 B sent
+  persistent keepalive: every 25 seconds
+
+peer: uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+  endpoint: 110.238.90.22:3677
+  allowed ips: 10.20.30.7/32
+  latest handshake: 2 seconds ago
+  transfer: 180 B received, 272 B sent
+  persistent keepalive: every 25 seconds
+
+peer: JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+  endpoint: 201.137.117.82:58946
+  allowed ips: 10.20.30.6/32
+  latest handshake: 4 seconds ago
+  transfer: 180 B received, 272 B sent
+  persistent keepalive: every 25 seconds
+
+peer: mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+  endpoint: 3.228.113.66:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 6 seconds ago
+  transfer: 124 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+peer: gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+  endpoint: 98.87.229.24:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 6 seconds ago
+  transfer: 124 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 32 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{119 aws (54.210.49.136) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = UNn1syIHP9dQJgP+aOqAJfhauAJV/iY+qdAwMOluM34=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 201.137.117.82:52204
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 201.137.117.82:58946
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 98.87.229.24:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 3.228.113.66:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+AllowedIPs = 10.20.30.7/32
+Endpoint = 110.238.90.22:3677
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{76 aws (3.228.113.66) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+  private key: (hidden)
+  listening port: 51820
+
+peer: JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+  endpoint: 201.137.117.82:58946
+  allowed ips: 10.20.30.6/32
+  latest handshake: 3 seconds ago
+  transfer: 180 B received, 272 B sent
+  persistent keepalive: every 25 seconds
+
+peer: uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+  endpoint: 110.238.90.22:4062
+  allowed ips: 10.20.30.7/32
+  latest handshake: 5 seconds ago
+  transfer: 180 B received, 272 B sent
+  persistent keepalive: every 25 seconds
+
+peer: pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+  endpoint: 201.137.117.82:52204
+  allowed ips: 10.20.30.5/32
+  latest handshake: 5 seconds ago
+  transfer: 180 B received, 272 B sent
+  persistent keepalive: every 25 seconds
+
+peer: gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+  endpoint: 98.87.229.24:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 7 seconds ago
+  transfer: 124 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+  endpoint: 54.210.49.136:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 9 seconds ago
+  transfer: 180 B received, 864 B sent
+  persistent keepalive: every 25 seconds
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 32 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{76 aws (3.228.113.66) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = WGJMr6baTqVSGstnE8O1KOsKKroHCEXmwchvCFXGiWI=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 54.210.49.136:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 201.137.117.82:52204
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 201.137.117.82:58946
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 98.87.229.24:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+AllowedIPs = 10.20.30.7/32
+Endpoint = 110.238.90.22:4062
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{143 aws (98.87.229.24) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+  private key: (hidden)
+  listening port: 51820
+
+peer: JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+  endpoint: 201.137.117.82:58946
+  allowed ips: 10.20.30.6/32
+  latest handshake: 6 seconds ago
+  transfer: 180 B received, 272 B sent
+  persistent keepalive: every 25 seconds
+
+peer: pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+  endpoint: 201.137.117.82:52204
+  allowed ips: 10.20.30.5/32
+  latest handshake: 7 seconds ago
+  transfer: 180 B received, 272 B sent
+  persistent keepalive: every 25 seconds
+
+peer: uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+  endpoint: 110.238.90.22:3275
+  allowed ips: 10.20.30.7/32
+  latest handshake: 7 seconds ago
+  transfer: 180 B received, 272 B sent
+  persistent keepalive: every 25 seconds
+
+peer: mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+  endpoint: 3.228.113.66:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 10 seconds ago
+  transfer: 180 B received, 864 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+  endpoint: 54.210.49.136:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 12 seconds ago
+  transfer: 180 B received, 716 B sent
+  persistent keepalive: every 25 seconds
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 32 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{143 aws (98.87.229.24) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = 0NNJXhX8jqbvq+8xngSVVgDfTBJPIIpqOygw2D6fWU0=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 54.210.49.136:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 3.228.113.66:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 201.137.117.82:52204
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 201.137.117.82:58946
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+AllowedIPs = 10.20.30.7/32
+Endpoint = 110.238.90.22:3275
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{40 vm (172.20.0.40) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+  private key: (hidden)
+  listening port: 53594
+
+peer: gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+  endpoint: 98.87.229.24:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 9 seconds ago
+  transfer: 124 B received, 772 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+  endpoint: 54.210.49.136:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 9 seconds ago
+  transfer: 124 B received, 772 B sent
+  persistent keepalive: every 25 seconds
+
+peer: mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+  endpoint: 3.228.113.66:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 10 seconds ago
+  transfer: 124 B received, 772 B sent
+  persistent keepalive: every 25 seconds
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 31 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+peer: JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+  endpoint: 201.137.117.82:58552
+  allowed ips: 10.20.30.6/32
+  transfer: 0 B received, 148 B sent
+  persistent keepalive: every 25 seconds
+
+peer: uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+  endpoint: 110.238.90.22:32645
+  allowed ips: 10.20.30.7/32
+  transfer: 0 B received, 148 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{40 vm (172.20.0.40) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 53594
+PrivateKey = 4N4N7nebucg+oSIQEgs0YPcN7Y66X/4+KXPJcZeQ3VQ=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 54.210.49.136:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 98.87.229.24:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 3.228.113.66:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 201.137.117.82:58552
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+AllowedIPs = 10.20.30.7/32
+Endpoint = 110.238.90.22:32645
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{7 rpi5 (172.20.0.7) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+  private key: (hidden)
+  listening port: 50295
+
+peer: gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+  endpoint: 98.87.229.24:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 10 seconds ago
+  transfer: 124 B received, 772 B sent
+  persistent keepalive: every 25 seconds
+
+peer: mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+  endpoint: 3.228.113.66:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 10 seconds ago
+  transfer: 124 B received, 772 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+  endpoint: 54.210.49.136:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 14 seconds ago
+  transfer: 124 B received, 624 B sent
+  persistent keepalive: every 25 seconds
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 30 seconds ago
+  transfer: 92 B received, 212 B sent
+  persistent keepalive: every 25 seconds
+
+peer: pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+  endpoint: 201.137.117.82:52204
+  allowed ips: 10.20.30.5/32
+  transfer: 0 B received, 888 B sent
+  persistent keepalive: every 25 seconds
+
+peer: uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+  endpoint: 110.238.90.22:32645
+  allowed ips: 10.20.30.7/32
+  transfer: 0 B received, 148 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{7 rpi5 (172.20.0.7) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 50295
+PrivateKey = UOWie7X+jXs83dIGpkuUCXaFVHOung/OJv2Eww/0nVg=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 54.210.49.136:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 201.137.117.82:52204
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 98.87.229.24:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 3.228.113.66:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+AllowedIPs = 10.20.30.7/32
+Endpoint = 110.238.90.22:32645
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\subsubsection*{peer01 (QEMU) — wg show}
+\begin{lstlisting}
+interface: wg0
+  public key: uIBVR/d/6IoC7kH6gvaHULTp1PaiLzO6o0UihOi0Z2c=
+  private key: (hidden)
+  listening port: 51820
+
+peer: gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+  endpoint: 98.87.229.24:51820
+  allowed ips: 10.20.30.4/32
+  latest handshake: 12 seconds ago
+  transfer: 124 B received, 476 B sent
+  persistent keepalive: every 25 seconds
+
+peer: 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+  endpoint: 54.210.49.136:51820
+  allowed ips: 10.20.30.2/32
+  latest handshake: 12 seconds ago
+  transfer: 124 B received, 476 B sent
+  persistent keepalive: every 25 seconds
+
+peer: mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+  endpoint: 3.228.113.66:51820
+  allowed ips: 10.20.30.3/32
+  latest handshake: 12 seconds ago
+  transfer: 124 B received, 476 B sent
+  persistent keepalive: every 25 seconds
+
+peer: UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+  endpoint: 34.193.139.170:51820
+  allowed ips: 10.20.30.0/24
+  latest handshake: 23 seconds ago
+  transfer: 92 B received, 180 B sent
+  persistent keepalive: every 25 seconds
+
+peer: JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+  endpoint: 201.137.117.82:58552
+  allowed ips: 10.20.30.6/32
+  transfer: 0 B received, 740 B sent
+  persistent keepalive: every 25 seconds
+
+peer: pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+  endpoint: 201.137.117.82:39808
+  allowed ips: 10.20.30.5/32
+  transfer: 0 B received, 740 B sent
+  persistent keepalive: every 25 seconds
+
+\end{lstlisting}
+
+\subsubsection*{peer01 (QEMU) — wg showconf}
+\begin{lstlisting}
+[Interface]
+ListenPort = 51820
+PrivateKey = yG3ZAFzXjAAraj/IDqBZFms7PtsIIUhnsM8nb7pi12o=
+
+[Peer]
+PublicKey = UYf0CGH5fqIYJUljTxzlSrhMCwXcv4O8rkERY+0zQVY=
+AllowedIPs = 10.20.30.0/24
+Endpoint = 34.193.139.170:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = 2kFAMK6bhfjPXt2vcG/jNJmCCPkikSF7mtQiOhkUWBs=
+AllowedIPs = 10.20.30.2/32
+Endpoint = 54.210.49.136:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = pGycFmUSULG6l01f4syhCW4iktTrrqAmLVPXnfx/GCQ=
+AllowedIPs = 10.20.30.5/32
+Endpoint = 201.137.117.82:39808
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = JBohcdCZPnlNgkbR19QfBZ0V40HQ1CmwmvEWgurJbAw=
+AllowedIPs = 10.20.30.6/32
+Endpoint = 201.137.117.82:58552
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = gImuxSAmfczfOlV7/hTmIsQ9XPOR+RGiTqRN3oN64Vo=
+AllowedIPs = 10.20.30.4/32
+Endpoint = 98.87.229.24:51820
+PersistentKeepalive = 25
+
+[Peer]
+PublicKey = mX5hF2Q6z1M/CQYWI4Jql9U/kyznPWiR3KzkGIVEZTU=
+AllowedIPs = 10.20.30.3/32
+Endpoint = 3.228.113.66:51820
+PersistentKeepalive = 25
+
+\end{lstlisting}
+
+\section{Resumen por topologia}
+\begin{longtable}{|c|c|c|c|c|c|}
+\hline
+Topologia & Ping OK & RTT minimo & RTT promedio & RTT maximo & Throughput \\ \hline
+mesh & 19/30 & 0.6 & 75.0 & 172.4 & nube: 1507.5 Mbps \\ \hline
+\end{longtable}
+
+\section{Modo de autenticacion CLI Multiusuario}
+\begin{longtable}{|c|c|c|}
+\hline
+Operacion & Usuario & Auth \\ \hline
+network.* (create/delete/topology) & admin & --admin-token \\ \hline
+peer.list (todos los peers) & admin & --admin-token \\ \hline
+peer.unregister & tenant-a & --token(JWT) \\ \hline
+SSH nubes AWS & ubuntu / ec2-user & llavelinkguard-key.pem \\ \hline
+SSH orquestador & admin & llave +sudo \\ \hline
+SSH VM/RPi5 & root / natalia & password via jumproot@100.115.215.49 \\ \hline
+SSH QEMU & root & passwordlinkguard-test \\ \hline
+\end{longtable}
+
+Usuario tenant:  \texttt{tenant-a} tenant-a  | JWT via  \texttt{auth-login} auth-login\\
+
+
+\end{document}

@@ -1,0 +1,45 @@
+@startuml plano-control-datos
+title LinkGuard: Planos de Control y Datos
+
+skinparam componentStyle rectangle
+
+rectangle "Plano de Control" as PC #E3F2FD {
+    node "Orchestrator\n:8000/RPC2" as Orch
+    node "Peer A\n(wg-auto-register)" as PA
+    node "Peer B\n(wg-auto-register)" as PB
+    node "Peer C\n(wg-auto-register)" as PC2
+}
+
+rectangle "Plano de Datos" as PD #E8F5E9 {
+    cloud "wg-HUB\n(Hub Agent :51820)" as HUB
+    node "wg0\n(Peer A)" as WGA
+    node "wg0\n(Peer B)" as WGB
+    node "wg0\n(Peer C)" as WGC
+}
+
+PA -down-> Orch : HTTP/XML-RPC\nregister/heartbeat\n(25s)
+PB -down-> Orch : HTTP/XML-RPC
+PC2 -down-> Orch : HTTP/XML-RPC
+
+WGA -right-> HUB : WireGuard cifrado
+WGB -left-> HUB : WireGuard cifrado
+WGC -up-> HUB : WireGuard cifrado
+
+note top of PC
+  **Plano de Control** (siempre activo)
+  - peer.register / peer.heartbeat
+  - auth.login / auth.refresh
+  - config.get_peer_config
+  - peer.report_reachability
+  - Protocolo: XML-RPC sobre HTTP
+  - Frecuencia: cada 25s (heartbeat)
+end note
+
+note bottom of PD
+  **Plano de Datos** (según topología)
+  - Tráfico WireGuard cifrado
+  - Topología determina routing
+  - Puede ser directo o via HUB
+end note
+
+@enduml

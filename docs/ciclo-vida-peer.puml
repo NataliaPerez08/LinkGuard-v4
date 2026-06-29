@@ -1,0 +1,51 @@
+@startuml ciclo-vida-peer
+title Ciclo de vida del Peer (wg-auto-register)
+
+skinparam state {
+    BackgroundColor<<start>> #LightGreen
+    BackgroundColor<<stop>> #LightCoral
+    BackgroundColor<<warn>> #LightYellow
+}
+
+state "Sin Claves" as SinClaves <<start>>
+state "Registrado" as Registrado
+state "Daemon\n(cmd_run)" as Daemon {
+    state "Detectar NAT" as DetectNAT
+    state "Enviar Heartbeat" as SendHB
+    state "Evaluar Version" as EvalVer
+    state "Reaplicar Config" as Reapply
+    state "Probar Peers Directos" as Probe
+
+    DetectNAT --> SendHB : detect_nat_type()\ncache 300s
+    SendHB --> EvalVer : peer.heartbeat(status)
+    EvalVer --> Reapply : desired_version != current
+    EvalVer --> Probe : hub-mesh topology
+    Reapply --> [*] : save state
+    Probe --> [*] : save state
+}
+state "Rotando Clave" as Rotating
+state "Solicitando Red" as ReqNet
+state "Muerto" as Muerto <<stop>>
+
+[*] --> SinClaves : install.sh / peer.env
+SinClaves --> Registrado : cmd_register
+note right of Registrado
+  1. gen_keys_if_needed()
+  2. peer.register(pub, endpoint, tags)
+  3. guarda peer_id, config_version
+  4. apply_config() → wg0.conf
+end note
+
+Registrado --> Daemon : cmd_run (daemon loop)
+Daemon --> Daemon : cada WG_HEARTBEAT_INTERVAL (25s)
+
+Daemon --> Rotating : cmd_rotate_key
+Rotating --> Daemon : peer.rotate_key + apply_config
+
+Daemon --> ReqNet : cmd_request_network
+ReqNet --> Daemon : peer.request_network + apply
+
+Daemon --> Muerto : SIGTERM / uninstall
+Muerto --> [*]
+
+@enduml

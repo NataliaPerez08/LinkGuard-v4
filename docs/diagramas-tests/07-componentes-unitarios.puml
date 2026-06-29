@@ -1,0 +1,55 @@
+@startuml
+!theme plain
+skinparam backgroundColor #fafafa
+skinparam component {
+  BorderColor #1565c0
+  BackgroundColor #e3f2fd
+}
+skinparam folder {
+  BorderColor #1565c0
+  BackgroundColor #fff3e0
+}
+
+title Diagrama de Componentes — Tests Unitarios (501 tests)
+
+package "Orquestador\n(388 tests)" as ORCH {
+  folder "orchestrator-install-v2/tests/" as ORCH_DIR
+
+  component "test_xmlrpc_api\n120 tests" as APITEST
+  component "test_db\n80 tests" as DBTEST
+  component "test_auth\n70 tests" as AUTHTEST
+  component "test_config_gen\n55 tests" as CPGTEST
+  component "test_topology\n40 tests" as TOPOTEST
+  component "test_heartbeat\n23 tests" as HBTEST
+
+  ORCH_DIR --> APITEST
+  ORCH_DIR --> DBTEST
+  ORCH_DIR --> AUTHTEST
+  ORCH_DIR --> CPGTEST
+  ORCH_DIR --> TOPOTEST
+  ORCH_DIR --> HBTEST
+}
+
+package "Peer\n(113 tests)" as PEER {
+  folder "peer-install-v2/tests/" as PEER_DIR
+
+  component "test_wg_auto_register\n40 tests" as WGTEST
+  component "test_config_gen\n25 tests" as CGTEST
+  component "test_nat\n20 tests" as NATTEST
+  component "test_heartbeat\n15 tests" as HBTEST2
+  component "test_utils\n13 tests" as UTILSTEST
+
+  PEER_DIR --> WGTEST
+  PEER_DIR --> CGTEST
+  PEER_DIR --> NATTEST
+  PEER_DIR --> HBTEST2
+  PEER_DIR --> UTILSTEST
+}
+
+note right of APITEST : mock ServerProxy, subprocess
+note right of DBTEST : sqlite in-memory
+note right of AUTHTEST : JWT tokens, roles
+note right of CPGTEST : peer_register.config_gen
+note right of WGTEST : mock wg-quick, wg show
+
+@enduml

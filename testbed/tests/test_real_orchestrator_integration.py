@@ -15,6 +15,8 @@ import xmlrpc.client
 PASS = "linkguard-test"
 SSH_OPTS = ["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "ConnectTimeout=5"]
 REAL_ORCH_URL = os.environ.get("TESTBED_REAL_ORCH_URL", "http://101.44.24.91:8000/RPC2")
+_REAL_ORCH_HOST = REAL_ORCH_URL.split("://")[1].split(":")[0]
+_REAL_WG_ENDPOINT = f"{_REAL_ORCH_HOST}:51820"
 
 QEMU_PEERS = {
     "orq": {"host_ip": "192.168.100.10", "peer_id": "qemu-orq"},
@@ -98,7 +100,7 @@ def test_qemu_peer_services_and_handshakes():
         assert status.returncode == 0, f"wg-auto-register no está sano en {cfg['host_ip']}:\n{status.stdout}\n{status.stderr}"
         wg_show = _ssh(cfg["host_ip"], "wg", "show", "wg0")
         assert wg_show.returncode == 0, f"wg0 no está levantado en {cfg['host_ip']}:\n{wg_show.stdout}\n{wg_show.stderr}"
-        assert "endpoint: 101.44.24.91:51820" in wg_show.stdout
+        assert f"endpoint: {_REAL_WG_ENDPOINT}" in wg_show.stdout
         _wait_for_handshake(cfg["host_ip"])
 
 

@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch, MagicMock
 
 
 class TestOrchEndpoints:
@@ -335,3 +336,541 @@ class TestPeerAdminOps:
         from orchestrator.endpoints_peers import rpc_peer_set_networks
         r = rpc_peer_set_networks({"peer_id": "p1", "networks": ["lan1"]})
         assert r["networks"] == ["lan1"]
+
+
+# ──────────────────────── _require_peer_jwt ────────────────────────
+
+
+class TestRequirePeerJwt:
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_valid_jwt(self, mock_hub, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["peer:write"]}, 60)
+        from orchestrator.endpoints_peers import _require_peer_jwt
+        uid = _require_peer_jwt(token, "p1", "peer:write")
+        assert uid == "alice"
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_no_token(self, mock_hub, sample_state):
+        from orchestrator.endpoints_peers import _require_peer_jwt
+        with pytest.raises(PermissionError, match="authentication required"):
+            _require_peer_jwt(None, "p1", "peer:write")
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_cross_tenant_forbidden(self, mock_hub, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "other-tenant", "scopes": ["peer:write"]}, 60)
+        from orchestrator.endpoints_peers import _require_peer_jwt
+        with pytest.raises(PermissionError, match="cross-tenant"):
+            _require_peer_jwt(token, "p1", "peer:write")
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_admin_bypasses_tenant_check(self, mock_hub, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "admin", "scopes": ["peer:write"], "role": "admin"}, 60)
+        from orchestrator.endpoints_peers import _require_peer_jwt
+        uid = _require_peer_jwt(token, "p1", "peer:write")
+        assert uid == "admin"
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_missing_scope(self, mock_hub, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["peer:read"]}, 60)
+        from orchestrator.endpoints_peers import _require_peer_jwt
+        with pytest.raises(PermissionError, match="missing scope"):
+            _require_peer_jwt(token, "p1", "peer:write")
+
+
+# ──────────────────────── _mesh_hash ────────────────────────
+
+
+class TestMeshHash:
+    def test_consistency(self):
+        from orchestrator.endpoints_peers import _mesh_hash
+        h1 = _mesh_hash([{"peer_id": "p1"}, {"peer_id": "p2"}])
+        h2 = _mesh_hash([{"peer_id": "p1"}, {"peer_id": "p2"}])
+        assert h1 == h2
+
+    def test_changes_with_data(self):
+        from orchestrator.endpoints_peers import _mesh_hash
+        h1 = _mesh_hash([{"peer_id": "p1"}])
+        h2 = _mesh_hash([{"peer_id": "p2"}])
+        assert h1 != h2
+
+
+# ──────────────────────── rpc_peer_register ────────────────────────
+
+
+class TestPeerRegister:
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_register_new_peer(self, mock_hub, init_state):
+        from orchestrator import state
+        state.STATE["users"]["alice"] = {"max_peers": 5, "max_networks": 5}
+        state.STATE["networks"]["default"] = {"cidr": "10.0.0.0/24"}
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["peer:write"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_register
+        r = rpc_peer_register({
+            "peer_id": "p_new", "public_key": "A" * 44,
+            "endpoint": "1.2.3.4:51820", "token": token,
+        })
+        assert r["peer_id"] == "p_new"
+        assert "wg_ip" in r
+        assert "config_version" in r
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_register_existing_peer(self, mock_hub, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["peer:write"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_register
+        r = rpc_peer_register({
+            "peer_id": "p1", "public_key": "new_pubkey_here_00000000000000000000",
+            "endpoint": "5.6.7.8:51820", "token": token,
+        })
+        assert r["peer_id"] == "p1"
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_register_missing_peer_id(self, mock_hub, init_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["peer:write"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_register
+        with pytest.raises(ValueError, match="peer_id"):
+            rpc_peer_register({"public_key": "A" * 44, "token": token})
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_register_cross_tenant(self, mock_hub, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "other-tenant", "scopes": ["peer:write"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_register
+        with pytest.raises(PermissionError, match="cross-tenant"):
+            rpc_peer_register({
+                "peer_id": "p1", "public_key": "A" * 44, "token": token,
+            })
+
+
+# ──────────────────────── rpc_peer_heartbeat (extendido) ────────────────────────
+
+
+class TestPeerHeartbeatExtended:
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    @patch("orchestrator.endpoints_peers.hub_client._get_wg_endpoint")
+    def test_endpoint_override_private(self, mock_get_wg, mock_hub, sample_state):
+        mock_get_wg.return_value = "10.0.0.99:51820"
+        from orchestrator.endpoints_peers import rpc_peer_heartbeat
+        r = rpc_peer_heartbeat({
+            "peer_id": "p1",
+            "status": {"endpoint": "192.168.1.1:51820", "nat_type": "symmetric"},
+            "remote_addr": "100.64.0.1",
+        })
+        assert r["heartbeat_ack"] is True
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_endpoint_public_preserved(self, mock_hub, sample_state):
+        from orchestrator.endpoints_peers import rpc_peer_heartbeat
+        r = rpc_peer_heartbeat({
+            "peer_id": "p1",
+            "status": {"endpoint": "1.2.3.4:51820", "nat_type": "full-cone"},
+            "remote_addr": "100.64.0.1",
+        })
+        assert r["heartbeat_ack"] is True
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_heartbeat_mesh_topology(self, mock_hub, sample_state):
+        from orchestrator import state
+        state.STATE["networks"]["lan1"]["topology"] = "mesh"
+        from orchestrator.endpoints_peers import rpc_peer_heartbeat
+        r = rpc_peer_heartbeat({"peer_id": "p1", "status": {"wg": "ok"}})
+        assert "mesh_peers_hash" in r
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_heartbeat_hub_mesh_topology(self, mock_hub, sample_state):
+        from orchestrator import state
+        state.STATE["networks"]["lan1"]["topology"] = "hub-mesh"
+        from orchestrator.endpoints_peers import rpc_peer_heartbeat
+        r = rpc_peer_heartbeat({"peer_id": "p1", "status": {"wg": "ok"}})
+        assert "hub_mesh_peers_hash" in r
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_heartbeat_no_networks(self, mock_hub, init_state):
+        from orchestrator import state
+        state.STATE["peers"]["p_no_net"] = {
+            "public_key": "pk", "networks": [], "user_id": "admin",
+        }
+        from orchestrator.endpoints_peers import rpc_peer_heartbeat
+        r = rpc_peer_heartbeat({"peer_id": "p_no_net", "status": {}})
+        assert r["heartbeat_ack"] is True
+
+
+# ──────────────────────── rpc_peer_request_network ────────────────────────
+
+
+class TestPeerRequestNetwork:
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_request_network(self, mock_hub, init_state):
+        from orchestrator import state
+        state.STATE["peers"]["p1"] = {"public_key": "pk", "user_id": "alice", "networks": []}
+        state.STATE["networks"]["n1"] = {"cidr": "10.0.0.0/24", "user_id": "alice"}
+        state.STATE["users"]["alice"] = {"max_peers": 5, "max_networks": 5}
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["network:write"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_request_network
+        r = rpc_peer_request_network({"peer_id": "p1", "network_id": "n1", "token": token})
+        assert r["network_id"] == "n1"
+        assert "ip" in r
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_request_network_missing(self, mock_hub, init_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["network:write"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_request_network
+        with pytest.raises(KeyError):
+            rpc_peer_request_network({"peer_id": "p1", "network_id": "nonexistent", "token": token})
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_request_network_no_id(self, mock_hub, init_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["network:write"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_request_network
+        with pytest.raises(ValueError):
+            rpc_peer_request_network({"peer_id": "p1", "network_id": "", "token": token})
+
+
+# ──────────────────────── rpc_peer_rotate_key ────────────────────────
+
+
+class TestPeerRotateKey:
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_rotate_key(self, mock_hub, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["peer:write"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_rotate_key
+        r = rpc_peer_rotate_key({
+            "peer_id": "p1", "public_key": "new_pubkey_abc", "token": token,
+        })
+        assert r["rotated"] is True
+        assert "config_version" in r
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_rotate_key_missing_pubkey(self, mock_hub, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["peer:write"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_rotate_key
+        with pytest.raises(ValueError, match="public_key"):
+            rpc_peer_rotate_key({"peer_id": "p1", "public_key": "", "token": token})
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_rotate_key_missing_peer(self, mock_hub, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["peer:write"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_rotate_key
+        with pytest.raises(KeyError):
+            rpc_peer_rotate_key({"peer_id": "nonexistent", "public_key": "x" * 44, "token": token})
+
+
+# ──────────────────────── rpc_peer_report_reachability ────────────────────────
+
+
+class TestPeerReportReachability:
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_report_reachable(self, mock_hub, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["peer:write"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_report_reachability
+        r = rpc_peer_report_reachability({
+            "peer_id": "p1", "target_peer_id": "p2",
+            "reachable": True, "token": token,
+        })
+        assert r["recorded"] is True
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_report_not_reachable(self, mock_hub, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["peer:write"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_report_reachability
+        r = rpc_peer_report_reachability({
+            "peer_id": "p1", "target_peer_id": "p2",
+            "reachable": False, "token": token,
+        })
+        assert r["recorded"] is True
+
+
+# ──────────────────────── rpc_peer_unregister (extendido) ────────────────────────
+
+
+class TestPeerUnregisterExtended:
+    @patch("orchestrator.endpoints_peers.hub_client.hub_remove_peer")
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_unregister_admin_token(self, mock_hub, mock_remove, sample_state):
+        from orchestrator.endpoints_peers import rpc_peer_unregister
+        r = rpc_peer_unregister({
+            "peer_id": "p1", "admin_token": "test-admin-token-123",
+        })
+        assert r is True
+
+    @patch("orchestrator.endpoints_peers.hub_client.hub_remove_peer")
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_unregister_jwt(self, mock_hub, mock_remove, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["peer:delete"]}, 60)
+        from orchestrator.endpoints_peers import rpc_peer_unregister
+        r = rpc_peer_unregister({"peer_id": "p1", "token": token})
+        assert r is True
+
+    @patch("orchestrator.endpoints_peers.hub_client.hub_remove_peer")
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_unregister_missing_peer(self, mock_hub, mock_remove, init_state):
+        from orchestrator.endpoints_peers import rpc_peer_unregister
+        r = rpc_peer_unregister({"peer_id": "nonexistent", "admin_token": "test-admin-token-123"})
+        assert r is True
+
+
+# ──────────────────────── rpc_peer_assign_network (extendido) ────────────────────────
+
+
+class TestPeerAssignNetworkExtended:
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_assign_network_ip_outside_cidr(self, mock_hub, sample_state):
+        from orchestrator.endpoints_peers import rpc_peer_assign_network
+        with pytest.raises(ValueError, match="ip not in network cidr"):
+            rpc_peer_assign_network({
+                "peer_id": "p1", "network_id": "lan1",
+                "ip": "192.168.1.1", "admin_token": "test-admin-token-123",
+            })
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_assign_network_ip_conflict(self, mock_hub, sample_state):
+        from orchestrator import state
+        from orchestrator.endpoints_peers import rpc_peer_assign_network
+        state.STATE["peers"]["p2"] = {"public_key": "pk2", "user_id": "admin", "networks": []}
+        with pytest.raises(ValueError, match="already assigned"):
+            rpc_peer_assign_network({
+                "peer_id": "p2", "network_id": "lan1",
+                "ip": "10.0.0.1", "admin_token": "test-admin-token-123",
+            })
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_assign_network_success(self, mock_hub, sample_state):
+        from orchestrator.endpoints_peers import rpc_peer_assign_network
+        r = rpc_peer_assign_network({
+            "peer_id": "p1", "network_id": "lan1",
+            "ip": "10.0.0.5", "admin_token": "test-admin-token-123",
+        })
+        assert r is True
+
+
+# ──────────────────────── rpc_config_get_mesh_peers ────────────────────────
+
+
+class TestConfigGetMeshPeers:
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_mesh_topology_dispatches(self, mock_hub, init_state):
+        from orchestrator import state
+        state.STATE["networks"]["n1"] = {
+            "cidr": "10.0.0.0/24", "topology": "mesh",
+            "alloc": {"assigned": {}, "reserved": []},
+        }
+        from orchestrator.endpoints_config import rpc_config_get_mesh_peers
+        r = rpc_config_get_mesh_peers({"peer_id": "p1", "network_id": "n1"})
+        assert isinstance(r, list)
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_hub_mesh_topology_dispatches(self, mock_hub, init_state):
+        from orchestrator import state
+        state.STATE["networks"]["n1"] = {
+            "cidr": "10.0.0.0/24", "topology": "hub-mesh",
+            "alloc": {"assigned": {}, "reserved": []},
+        }
+        from orchestrator.endpoints_config import rpc_config_get_mesh_peers
+        r = rpc_config_get_mesh_peers({"peer_id": "p1", "network_id": "n1"})
+        assert "direct" in r
+        assert "relay_only" in r
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_hub_spoke_raises(self, mock_hub, init_state):
+        from orchestrator import state
+        state.STATE["networks"]["n1"] = {
+            "cidr": "10.0.0.0/24", "topology": "hub-spoke",
+        }
+        from orchestrator.endpoints_config import rpc_config_get_mesh_peers
+        with pytest.raises(ValueError, match="hub-spoke"):
+            rpc_config_get_mesh_peers({"peer_id": "p1", "network_id": "n1"})
+
+
+# ──────────────────────── _classify_peers_for_hub_mesh (extendido) ────────────────────────
+
+
+class TestClassifyPeersForHubMeshExtended:
+    def test_symmetric_nat_requester(self, sample_state):
+        import time
+        from orchestrator import state
+        state.STATE["networks"]["lan1"]["topology"] = "hub-mesh"
+        state.STATE["peers"]["p_requester"] = {
+            "public_key": "pk_req", "user_id": "alice",
+            "networks": ["lan1"], "nat_type": "symmetric",
+        }
+        state.STATE["peers"]["p_target"] = {
+            "public_key": "pk_target", "user_id": "alice",
+            "networks": ["lan1"], "endpoint": "1.2.3.4:51820",
+            "nat_type": "full-cone", "last_heartbeat": int(time.time()),
+        }
+        state.STATE["networks"]["lan1"]["alloc"]["assigned"]["p_target"] = "10.0.0.2"
+        from orchestrator.endpoints_config import _classify_peers_for_hub_mesh
+        r = _classify_peers_for_hub_mesh("p_requester", "lan1")
+        assert len(r["relay_only"]) == 1
+        assert len(r["direct"]) == 0
+
+    def test_force_relay(self, sample_state):
+        import time
+        from orchestrator import state
+        state.STATE["networks"]["lan1"]["topology"] = "hub-mesh"
+        state.STATE["peers"]["p_target"] = {
+            "public_key": "pk_target", "user_id": "alice",
+            "networks": ["lan1"], "endpoint": "1.2.3.4:51820",
+            "nat_type": "full-cone", "relay_mode": "force_relay",
+            "last_heartbeat": int(time.time()),
+        }
+        state.STATE["networks"]["lan1"]["alloc"]["assigned"]["p_target"] = "10.0.0.2"
+        from orchestrator.endpoints_config import _classify_peers_for_hub_mesh
+        r = _classify_peers_for_hub_mesh("p1", "lan1")
+        assert len(r["relay_only"]) == 1
+        assert len(r["direct"]) == 0
+
+    def test_force_direct(self, sample_state):
+        import time
+        from orchestrator import state
+        state.STATE["networks"]["lan1"]["topology"] = "hub-mesh"
+        state.STATE["peers"]["p_target"] = {
+            "public_key": "pk_target", "user_id": "alice",
+            "networks": ["lan1"], "endpoint": "1.2.3.4:51820",
+            "nat_type": "full-cone", "relay_mode": "force_direct",
+            "last_heartbeat": int(time.time()),
+        }
+        state.STATE["networks"]["lan1"]["alloc"]["assigned"]["p_target"] = "10.0.0.2"
+        from orchestrator.endpoints_config import _classify_peers_for_hub_mesh
+        r = _classify_peers_for_hub_mesh("p1", "lan1")
+        assert len(r["direct"]) == 1
+        assert len(r["relay_only"]) == 0
+
+    def test_reachability_map_override(self, sample_state):
+        import time
+        from orchestrator import state
+        state.STATE["networks"]["lan1"]["topology"] = "hub-mesh"
+        state.STATE["peers"]["p_requester"] = {
+            "public_key": "pk_req", "user_id": "alice",
+            "networks": ["lan1"], "nat_type": "full-cone",
+            "reachability_map": {"p_target": "hub-relay"},
+        }
+        state.STATE["peers"]["p_target"] = {
+            "public_key": "pk_target", "user_id": "alice",
+            "networks": ["lan1"], "endpoint": "1.2.3.4:51820",
+            "nat_type": "full-cone", "last_heartbeat": int(time.time()),
+        }
+        state.STATE["networks"]["lan1"]["alloc"]["assigned"]["p_target"] = "10.0.0.2"
+        from orchestrator.endpoints_config import _classify_peers_for_hub_mesh
+        r = _classify_peers_for_hub_mesh("p_requester", "lan1")
+        assert len(r["relay_only"]) == 1
+
+    def test_dead_peer_excluded(self, sample_state):
+        from orchestrator import state
+        state.STATE["networks"]["lan1"]["topology"] = "hub-mesh"
+        state.STATE["peers"]["p_target"] = {
+            "public_key": "pk_target", "user_id": "alice",
+            "networks": ["lan1"], "endpoint": "1.2.3.4:51820",
+            "nat_type": "full-cone", "last_heartbeat": 0,
+        }
+        state.STATE["networks"]["lan1"]["alloc"]["assigned"]["p_target"] = "10.0.0.2"
+        from orchestrator.endpoints_config import _classify_peers_for_hub_mesh
+        r = _classify_peers_for_hub_mesh("p1", "lan1")
+        assert len(r["direct"]) == 0
+        assert len(r["relay_only"]) == 0
+
+
+# ──────────────────────── rpc_config_get_peer_config ────────────────────────
+
+
+class TestConfigGetPeerConfig:
+    @patch("orchestrator.hub_client._hub_call_with_retry")
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_hub_spoke_config(self, mock_hub, mock_hub_call, sample_state):
+        mock_hub_call.return_value = "hub-pubkey-xxxx"
+        from orchestrator import state
+        state.STATE["networks"]["lan1"]["topology"] = "hub-spoke"
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["config:read"], "role": "admin"}, 60)
+        from orchestrator.endpoints_config import rpc_config_get_peer_config
+        r = rpc_config_get_peer_config({"peer_id": "p1", "token": token})
+        assert r["interface"]["address"] == "10.0.0.1/32"
+        assert r["peer"]["public_key"] == "hub-pubkey-xxxx"
+        assert r["meta"]["topology"] == "hub-spoke"
+
+    @patch("orchestrator.hub_client._hub_call_with_retry")
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_mesh_config(self, mock_hub, mock_hub_call, sample_state):
+        mock_hub_call.return_value = "hub-pubkey-xxxx"
+        import time
+        from orchestrator import state
+        state.STATE["networks"]["lan1"]["topology"] = "mesh"
+        state.STATE["peers"]["p1"]["last_heartbeat"] = int(time.time())
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["config:read"], "role": "admin"}, 60)
+        from orchestrator.endpoints_config import rpc_config_get_peer_config
+        r = rpc_config_get_peer_config({"peer_id": "p1", "token": token})
+        assert "mesh_peers" in r
+        assert "mesh_peers_hash" in r["meta"]
+
+    @patch("orchestrator.hub_client._hub_call_with_retry")
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_hub_mesh_config(self, mock_hub, mock_hub_call, sample_state):
+        mock_hub_call.return_value = "hub-pubkey-xxxx"
+        import time
+        from orchestrator import state
+        state.STATE["networks"]["lan1"]["topology"] = "hub-mesh"
+        state.STATE["peers"]["p1"]["last_heartbeat"] = int(time.time())
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["config:read"], "role": "admin"}, 60)
+        from orchestrator.endpoints_config import rpc_config_get_peer_config
+        r = rpc_config_get_peer_config({"peer_id": "p1", "token": token})
+        assert "hub_mesh_direct_peers" in r
+        assert "hub_mesh_relay_peers" in r
+        assert "hub_mesh_peers_hash" in r["meta"]
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_no_auth(self, mock_hub, sample_state):
+        from orchestrator.endpoints_config import rpc_config_get_peer_config
+        with pytest.raises(PermissionError):
+            rpc_config_get_peer_config({"peer_id": "p1", "token": None})
+
+    @patch("orchestrator.endpoints_peers.hub_client._hub_apply_peer_allowed_ips")
+    def test_missing_peer(self, mock_hub, sample_state):
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["config:read"], "role": "admin"}, 60)
+        from orchestrator.endpoints_config import rpc_config_get_peer_config
+        with pytest.raises(KeyError):
+            rpc_config_get_peer_config({"peer_id": "nonexistent", "token": token})
+
+
+# ──────────────────────── rpc_config_reload ────────────────────────
+
+
+class TestConfigReload:
+    def test_reload(self):
+        from orchestrator.endpoints_config import rpc_config_reload
+        r = rpc_config_reload({})
+        assert r["reloaded"] is True
+
+
+# ──────────────────────── rpc_metrics JWT scoped ────────────────────────
+
+
+class TestMetricsJwt:
+    def test_jwt_tenant_scoped(self, init_state):
+        from orchestrator import state
+        state.STATE["users"]["alice"] = {"max_peers": 5, "max_networks": 5}
+        state.STATE["peers"]["p1"] = {"user_id": "alice", "enabled": True}
+        state.STATE["peers"]["p2"] = {"user_id": "other", "enabled": True}
+        from orchestrator.auth import _jwt_encode
+        token, _ = _jwt_encode({"user_id": "alice", "scopes": ["*"], "role": "admin"}, 60)
+        from orchestrator.endpoints_orch import rpc_metrics
+        r = rpc_metrics({"token": token})
+        assert r["peers_total"] == 2
+        assert r["users_total"] == 1
